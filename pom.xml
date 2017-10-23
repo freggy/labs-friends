@@ -24,5 +24,10 @@
             <artifactId>kotlin-stdlib</artifactId>
             <version>${kotlin.version}</version>
         </dependency>
+        <dependency>
+            <groupId>de.bergwerklabs.atlantis</groupId>
+            <artifactId>atlantis-api-friends</artifactId>
+            <version>0.1.0</version>
+        </dependency>
     </dependencies>
 </project>
