@@ -1,7 +1,12 @@
 package de.bergwerklabs.friends.client.bukkit
 
+import de.bergwerklabs.commons.spigot.chat.ChatCommons
 import de.bergwerklabs.commons.spigot.chat.messenger.PluginMessenger
+import org.bukkit.ChatColor
+import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
+import org.tyrannyofheaven.bukkit.zPermissions.ZPermissionsService
+import java.util.*
 
 internal var friendsClient: FriendsBukkitClient? = null
 
@@ -10,11 +15,20 @@ internal var friendsClient: FriendsBukkitClient? = null
  * <p>
  * @author Yannic Rieger
  */
-class FriendsBukkitClient : JavaPlugin() {
+class FriendsBukkitClient : JavaPlugin(), Listener {
     
     val messenger = PluginMessenger("Friends")
+    lateinit var zPermissionService: ZPermissionsService
     
     override fun onEnable() {
         friendsClient = this
+        this.server.pluginManager.registerEvents(this, this)
+        zPermissionService = this.server.servicesManager.load(ZPermissionsService::class.java)
+        FriendsApi.registerFriendResponseListener(RequestResponseListener())
+    }
+    
+    fun getRankColor(uuid: UUID): ChatColor {
+        val optional = ChatCommons.chatColorFromColorCode(friendsClient!!.zPermissionService.getPlayerPrefix(uuid))
+        return if (optional.isPresent) optional.get() else ChatColor.BOLD
     }
 }
