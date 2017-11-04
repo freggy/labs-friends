@@ -3,25 +3,36 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>labs-friends</artifactId>
+        <artifactId>friends-client</artifactId>
         <groupId>de.bergwerklabs.friends</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>friends-server</artifactId>
+    <artifactId>friends-bukkit-client</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>de.bergwerklabs.atlantis</groupId>
-            <artifactId>atlantis-client-standalone</artifactId>
-            <version>0.1.0</version>
+            <groupId>org.spigotmc</groupId>
+            <artifactId>spigot-server</artifactId>
+            <version>1.8-R4</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.bergwerklabs.framework</groupId>
+            <artifactId>spigot-commons</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.bergwerklabs.framework</groupId>
+            <artifactId>chat-commons</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
     <build>
-        <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
-        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
         <plugins>
             <plugin>
                 <artifactId>kotlin-maven-plugin</artifactId>

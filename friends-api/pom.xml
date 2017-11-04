@@ -17,6 +17,11 @@
             <artifactId>atlantis-client-standalone</artifactId>
             <version>0.1.0</version>
         </dependency>
+        <dependency>
+            <groupId>de.bergwerklabs.atlas</groupId>
+            <artifactId>atlas-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
