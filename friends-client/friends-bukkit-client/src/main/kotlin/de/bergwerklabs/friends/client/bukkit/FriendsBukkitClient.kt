@@ -2,6 +2,8 @@ package de.bergwerklabs.friends.client.bukkit
 
 import de.bergwerklabs.commons.spigot.chat.ChatCommons
 import de.bergwerklabs.commons.spigot.chat.messenger.PluginMessenger
+import de.bergwerklabs.friends.client.bukkit.command.FriendAcceptDenyCommand
+import de.bergwerklabs.friends.client.bukkit.command.FriendParentCommand
 import org.bukkit.ChatColor
 import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
@@ -24,6 +26,8 @@ class FriendsBukkitClient : JavaPlugin(), Listener {
         friendsClient = this
         this.server.pluginManager.registerEvents(this, this)
         zPermissionService = this.server.servicesManager.load(ZPermissionsService::class.java)
+        // TODO: add child commands
+        this.getCommand("friend").executor = FriendParentCommand("friend", FriendAcceptDenyCommand())
         FriendsApi.registerFriendResponseListener(RequestResponseListener())
         FriendsApi.registerFriendRequestListener(FriendRequestListener())
     }

@@ -49,6 +49,11 @@ class FriendsApi {
         }
         
         @JvmStatic
+        fun respondToInvite(sender: UUID, receiver: UUID, response: FriendRequestResponse) {
+            this.client.sendPacket(FriendInviteResponsePacket(this.client.clientInformation, sender, receiver, response))
+        }
+        
+        @JvmStatic
         fun removeFriend(from: UUID, toRemove: UUID) {
             this.service.sendPackage(RemoveFriendPacket(toRemove, from))
         }
