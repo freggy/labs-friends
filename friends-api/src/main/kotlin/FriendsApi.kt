@@ -17,16 +17,25 @@ class FriendsApi {
     
         private val client = AtlasClient()
         private val service = AtlantisPackageService()
-        private val listeners: MutableSet<AtlasPacketListener<FriendInviteResponsePacket>> = HashSet()
+        private val responseListeners: MutableSet<AtlasPacketListener<FriendInviteResponsePacket>> = HashSet()
+        private val requestListeners: MutableSet<AtlasPacketListener<FriendInviteRequestPacket>> = HashSet()
         
         
         init {
             this.client.register()
+            
             this.client.registerListener(FriendInviteResponsePacket::class.java, object: AtlasPacketListener<FriendInviteResponsePacket> {
                 override fun onPacketReceived(packet: FriendInviteResponsePacket) {
-                    listeners.forEach { listener -> listener.onPacketReceived(packet) }
+                    responseListeners.forEach { listener -> listener.onPacketReceived(packet) }
                 }
             })
+    
+            this.client.registerListener(FriendInviteRequestPacket::class.java, object: AtlasPacketListener<FriendInviteRequestPacket> {
+                override fun onPacketReceived(packet: FriendInviteRequestPacket) {
+                    requestListeners.forEach { listener -> listener.onPacketReceived(packet) }
+                }
+            })
+            
         }
         
         @JvmStatic
@@ -57,7 +66,11 @@ class FriendsApi {
         }
         
         fun registerFriendResponseListener(listener: AtlasPacketListener<FriendInviteResponsePacket>) {
-            this.listeners.add(listener)
+            this.responseListeners.add(listener)
+        }
+    
+        fun registerFriendRequestListener(listener: AtlasPacketListener<FriendInviteRequestPacket>) {
+            this.requestListeners.add(listener)
         }
     }
 }

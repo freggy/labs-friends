@@ -25,6 +25,7 @@ class FriendsBukkitClient : JavaPlugin(), Listener {
         this.server.pluginManager.registerEvents(this, this)
         zPermissionService = this.server.servicesManager.load(ZPermissionsService::class.java)
         FriendsApi.registerFriendResponseListener(RequestResponseListener())
+        FriendsApi.registerFriendRequestListener(FriendRequestListener())
     }
     
     fun getRankColor(uuid: UUID): ChatColor {
