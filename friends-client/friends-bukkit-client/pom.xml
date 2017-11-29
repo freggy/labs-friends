@@ -20,26 +20,21 @@
 
     <dependencies>
         <dependency>
+            <groupId>net.md-5</groupId>
+            <artifactId>bungeecord-api</artifactId>
+            <version>1.12-SNAPSHOT</version>
+            <type>jar</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.tyrannyofheaven</groupId>
             <artifactId>zPermissions</artifactId>
             <version>1.3</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-server</artifactId>
-            <version>1.8-R4</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>de.bergwerklabs.framework</groupId>
-            <artifactId>spigot-commons</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>de.bergwerklabs.framework</groupId>
-            <artifactId>chat-commons</artifactId>
+            <artifactId>bungee-commons</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>

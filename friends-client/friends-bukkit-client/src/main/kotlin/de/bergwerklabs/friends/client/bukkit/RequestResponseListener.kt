@@ -14,7 +14,7 @@ import org.bukkit.Bukkit
 class RequestResponseListener : AtlasPacketListener<FriendInviteResponsePacket> {
     
     override fun onPacketReceived(packet: FriendInviteResponsePacket) {
-        Bukkit.getPlayer(packet.receiver).let { player ->
+        friendsClient.proxy.getPlayer(packet.receiver).let { player ->
             PlayerResolver.resolveUuidToName(packet.sender).ifPresent {
                 val messenger = friendsClient!!.messenger
                 val color = friendsClient!!.getRankColor(packet.sender)

@@ -1,33 +1,34 @@
 package de.bergwerklabs.friends.client.bukkit.command
 
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
-import de.bergwerklabs.commons.spigot.chat.ChatCommons
-import de.bergwerklabs.framework.commons.spigot.command.ChildCommand
+import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.friends.client.bukkit.friendsClient
-import org.bukkit.command.Command
-import org.bukkit.command.CommandSender
-import org.bukkit.entity.Player
+import net.md_5.bungee.api.CommandSender
+import net.md_5.bungee.api.connection.ProxiedPlayer
 
 /**
  * Created by Yannic Rieger on 04.11.2017.
  *
  * @author Yannic Rieger
  */
-class FriendRemoveCommand : ChildCommand {
+class FriendRemoveCommand : BungeeCommand {
     
     override fun getName() = "remove"
     
-    override fun onCommand(sender: CommandSender?, command: Command?, label: String?, args: Array<out String>?): Boolean {
-        if (sender is Player) {
-            PlayerResolver.resolveNameToUuid(label).ifPresent {
+    override fun getDescription() = ""
+    
+    override fun getUsage() = ""
+    
+    override fun execute(sender: CommandSender?, args: Array<out String>?) {
+        val name = args!![0];
+        if (sender is ProxiedPlayer) {
+            PlayerResolver.resolveNameToUuid(name).ifPresent {
                 if (FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList.contains(it)) {
                     FriendsApi.removeFriend(sender.uniqueId, it)
-                    val rankColor = ChatCommons.chatColorFromColorCode(friendsClient!!.zPermissionService.getPlayerPrefix(it)).get()
-                    friendsClient!!.messenger.message("$rankColor$label§r wurde aus deiner Freundesliste entfernt.", sender)
+                    friendsClient!!.messenger.message("${friendsClient!!.zBridge.getRankColor(it)}$name§r wurde aus deiner Freundesliste entfernt.", sender)
                 }
                 else friendsClient!!.messenger.message("§cDieser Spieler ist nicht mit dir befreundet.", sender)
             }
         }
-        return true
     }
 }

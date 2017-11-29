@@ -1,16 +1,17 @@
 package de.bergwerklabs.friends.client.bukkit.command
 
 import com.google.common.collect.Iterables
-import de.bergwerklabs.api.cache.pojo.players.online.OnlinePlayerCacheEntry
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
-import de.bergwerklabs.commons.spigot.chat.ChatCommons
-import de.bergwerklabs.framework.commons.spigot.command.ChildCommand
+import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.friends.client.bukkit.friendsClient
-import mkremins.fanciful.FancyMessage
-import org.bukkit.ChatColor
-import org.bukkit.command.Command
-import org.bukkit.command.CommandSender
-import org.bukkit.entity.Player
+import net.md_5.bungee.api.ChatColor
+import net.md_5.bungee.api.ChatMessageType
+import net.md_5.bungee.api.CommandSender
+import net.md_5.bungee.api.chat.ClickEvent
+import net.md_5.bungee.api.chat.ComponentBuilder
+import net.md_5.bungee.api.chat.HoverEvent
+import net.md_5.bungee.api.chat.TextComponent
+import net.md_5.bungee.api.connection.ProxiedPlayer
 import java.util.*
 
 /**
@@ -18,34 +19,37 @@ import java.util.*
  *
  * @author Yannic Rieger
  */
-class FriendListCommand : ChildCommand {
+class FriendListCommand : BungeeCommand {
     
     private val pageSize = 10
     
     override fun getName() = "list"
     
-    override fun onCommand(sender: CommandSender?, command: Command?, label: String?, args: Array<out String>?): Boolean {
-        if (sender is Player) {
+    override fun getDescription() = "Listet alle deine Freunde auf."
+    
+    override fun getUsage() = "/friend list"
+    
+    override fun execute(sender: CommandSender?, args: Array<out String>?) {
+        if (sender is ProxiedPlayer) {
             val friendList = FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList
             if (friendList.isNotEmpty()) {
                 sender.sendMessage("§6§m-------§b Freundesliste §6§m-------")
-                
+            
                 if (args!![0].isNullOrEmpty() || args[0].isBlank())
                     friendsClient!!.messenger.message("§cEin Fehler ist aufgetreten.", sender)
-    
+            
                 val page = args[0].toInt()
-    
+            
                 try {
                     this.listFriends(page, friendList, sender)
                 }
                 catch (ex: IllegalArgumentException) {
-                    return true
+                    ex.printStackTrace()
                 }
-                
-                sender.sendMessage("§6§m----------§b [$page/${Math.ceil(friendList.size.toDouble() / pageSize)}] §6§m----------")
+            
+                sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${Math.ceil(friendList.size.toDouble() / pageSize)}] §6§m----------"))
             }
         }
-        return true
     }
     
     /**
@@ -56,7 +60,7 @@ class FriendListCommand : ChildCommand {
      * @param friends set containing all the players friends.
      * @param player  player that executed the command.
      */
-    private fun listFriends(page: Int, friends: Set<UUID>, player: Player) {
+    private fun listFriends(page: Int, friends: Set<UUID>, player: ProxiedPlayer) {
         val pages = Iterables.toArray(Iterables.paddedPartition(friends, pageSize), List::class.java) as Array<List<UUID?>>
         
         if (page > pages.size || page < pages.size) throw IllegalArgumentException("Index out of bounds")
@@ -65,20 +69,26 @@ class FriendListCommand : ChildCommand {
             if (friendUuid != null) {
                 PlayerResolver.resolveUuidToName(friendUuid).ifPresent {
                     val online = PlayerResolver.getOnlinePlayerCacheEntry(friendUuid.toString())
-                    val message = FancyMessage("✖").color(ChatColor.RED).command("/friend remove $it").tooltip("Entferne $it aus der Freundesliste.")
-                            .then("✸").color(ChatColor.GOLD).command("/party invite $it").tooltip("Lade $it in eine Party ein")
-                            .then("➥").color(ChatColor.AQUA).command("/friend jump $it").tooltip("Joine $it nach")
-                            .then(" $it").color(ChatCommons.chatColorFromColorCode(friendsClient!!.zPermissionService.getPlayerPrefix(player.uniqueId)).get())
-                            .then(" - ").color(ChatColor.DARK_GRAY)
+                    val message = ComponentBuilder("✖").color(ChatColor.RED).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend remove $it"))
+                                                                                  .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Entferne $it aus der Freundesliste.")))
+                            
+                            .append("✸").color(ChatColor.GOLD).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/party invite $it"))
+                                                               .event(HoverEvent(HoverEvent.Action.SHOW_TEXT,  TextComponent.fromLegacyText("Lade $it in eine Party ein")))
+                            
+                            .append("➥").color(ChatColor.AQUA).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend jump $it"))
+                                                               .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Joine $it nach")))
+                            
+                            .append(" $it").color(friendsClient!!.zBridge.getRankColor(friendUuid))
+                            .append(" - ").color(ChatColor.DARK_GRAY)
                     
                     if (online.isPresent) {
                         val currentServer = online.get().currentServer
                         // TODO: generate display name
-                        message.then(currentServer.service).color(ChatColor.GRAY)
-                                                           .tooltip("Id: ${currentServer.containerId}")
+                        message.append(currentServer.service).color(ChatColor.GRAY)
+                                                           .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Id: ${currentServer.containerId}")))
                     }
-                    else message.then("OFFLINE").color(ChatColor.RED)
-                    message.send(player)
+                    else message.append("OFFLINE").color(ChatColor.RED)
+                    player.sendMessage(ChatMessageType.CHAT, *message.create())
                 }
             }
         }

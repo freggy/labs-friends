@@ -1,30 +1,31 @@
 package de.bergwerklabs.friends.client.bukkit.command
 
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
-import de.bergwerklabs.framework.commons.spigot.command.ChildCommand
-import de.bergwerklabs.framework.commons.spigot.pluginmessage.PluginMessageOption
-import de.bergwerklabs.framework.commons.spigot.pluginmessage.PluginMessages
+import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.friends.client.bukkit.friendsClient
-import org.bukkit.command.Command
-import org.bukkit.command.CommandSender
-import org.bukkit.entity.Player
+import net.md_5.bungee.api.CommandSender
+import net.md_5.bungee.api.connection.ProxiedPlayer
 
 /**
  * Created by Yannic Rieger on 04.11.2017.
  * <p>
  * @author Yannic Rieger
  */
-class FriendJumpToCommand : ChildCommand {
+class FriendJumpToCommand : BungeeCommand {
+    
+    override fun getDescription() = "Teleportiert dich zu einem anderen Spieler."
+    
+    override fun getUsage() = "/friend tp <name>"
     
     override fun getName() = "tp"
     
-    override fun onCommand(sender: CommandSender?, command: Command?, label: String?, args: Array<out String>?): Boolean {
-        if (sender is Player) {
+    override fun execute(sender: CommandSender?, args: Array<out String>?) {
+        if (sender is ProxiedPlayer) {
             val to = args!![0]
             PlayerResolver.getOnlinePlayerCacheEntry(to).ifPresent {
-                PluginMessages.sendPluginMessage(friendsClient, PluginMessageOption.CONNECT_OTHER, sender.displayName, it.currentServer.containerId)
+                val info = it.currentServer
+                sender.connect(friendsClient!!.proxy.getServerInfo("${info.service}_${info.containerId}"))
             }
         }
-        return true
     }
 }
