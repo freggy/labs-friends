@@ -8,7 +8,7 @@ import java.util.*
  * <p>
  * @author Yannic Rieger
  */
-interface FriendEventListener {
+interface FriendRequestResponseListener {
     
     fun onResponse(response: FriendRequestResponse, sender: UUID, receiver: UUID)
     

@@ -1,3 +1,5 @@
+package de.bergwerklabs.friends.api
+
 import de.bergwerklabs.api.cache.pojo.friends.FriendEntry
 import de.bergwerklabs.api.cache.pojo.friends.RequestEntry
 import java.util.*

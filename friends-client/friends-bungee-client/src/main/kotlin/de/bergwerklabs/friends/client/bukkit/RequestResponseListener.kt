@@ -1,24 +1,23 @@
 package de.bergwerklabs.friends.client.bukkit
 
-import de.bergwerklabs.atlantis.api.friends.FriendInviteResponsePacket
 import de.bergwerklabs.atlantis.api.friends.FriendRequestResponse
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
-import de.bergwerklabs.atlas.api.AtlasPacketListener
-import org.bukkit.Bukkit
+import de.bergwerklabs.friends.api.FriendRequestResponseListener
+import java.util.*
 
 /**
  * Created by Yannic Rieger on 04.11.2017.
  * <p>
  * @author Yannic Rieger
  */
-class RequestResponseListener : AtlasPacketListener<FriendInviteResponsePacket> {
+class RequestResponseListener : FriendRequestResponseListener {
     
-    override fun onPacketReceived(packet: FriendInviteResponsePacket) {
-        friendsClient.proxy.getPlayer(packet.receiver).let { player ->
-            PlayerResolver.resolveUuidToName(packet.sender).ifPresent {
+    override fun onResponse(response: FriendRequestResponse, sender: UUID, receiver: UUID) {
+        friendsClient!!.proxy.getPlayer(sender).let { player ->
+            PlayerResolver.resolveUuidToName(receiver).ifPresent {
                 val messenger = friendsClient!!.messenger
-                val color = friendsClient!!.getRankColor(packet.sender)
-                when (packet.requestResponse) {
+                val color = friendsClient!!.zBridge.getRankColor(receiver)
+                when (response) {
                     FriendRequestResponse.ACCEPTED         -> messenger.message("§a✚ $color$it§7 hat deine Freunschaftsanfrage angenommen.", player)
                     FriendRequestResponse.DENIED           -> messenger.message("§c✖ $color$it§7 hat deine Freunschaftsanfrage abgelehnt.", player)
                     FriendRequestResponse.FRIEND_LIST_FULL -> messenger.message("§cDeine Freundesliste ist voll.", player)

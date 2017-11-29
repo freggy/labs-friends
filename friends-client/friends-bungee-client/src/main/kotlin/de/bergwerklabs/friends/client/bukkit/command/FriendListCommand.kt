@@ -3,6 +3,7 @@ package de.bergwerklabs.friends.client.bukkit.command
 import com.google.common.collect.Iterables
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
+import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bukkit.friendsClient
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.ChatMessageType

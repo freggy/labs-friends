@@ -12,7 +12,7 @@
     <artifactId>friends-client</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>friends-bukkit-client</module>
+        <module>friends-bungee-client</module>
     </modules>
 
     <repositories>

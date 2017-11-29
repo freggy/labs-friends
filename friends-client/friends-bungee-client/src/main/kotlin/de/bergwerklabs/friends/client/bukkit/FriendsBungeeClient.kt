@@ -3,6 +3,7 @@ package de.bergwerklabs.friends.client.bukkit
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
 import de.bergwerklabs.framework.commons.bungee.chat.PluginMessenger
 import de.bergwerklabs.framework.commons.bungee.permissions.ZBridge
+import de.bergwerklabs.friends.api.FriendsApi
 import net.md_5.bungee.api.connection.ProxiedPlayer
 import net.md_5.bungee.api.plugin.Listener
 import net.md_5.bungee.api.plugin.Plugin
@@ -26,8 +27,8 @@ class FriendsBungeeClient : Plugin(), Listener {
         friendsClient = this
         // TODO: add child commands
         //this.getCommand("friend").executor = FriendParentCommand("friend", FriendAcceptDenyCommand())
-        FriendsApi.registerFriendResponseListener(RequestResponseListener())
-        FriendsApi.registerFriendRequestListener(FriendRequestListener())
+        FriendsApi.registerResponseListener(RequestResponseListener())
+        FriendsApi.registerInviteListener(FriendRequestListener())
     }
     
     internal fun process(name: String, sender: ProxiedPlayer, friendList: Set<UUID>, func: (UUID, UUID) -> Unit): Boolean {

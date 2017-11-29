@@ -1,24 +1,23 @@
 package de.bergwerklabs.friends.client.bukkit
 
-import de.bergwerklabs.atlantis.api.friends.FriendInviteRequestPacket
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
-import de.bergwerklabs.atlas.api.AtlasPacketListener
 import de.bergwerklabs.framework.commons.bungee.chat.text.MessageUtil
+import de.bergwerklabs.friends.api.FriendInviteListener
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.ComponentBuilder
+import java.util.*
 
 /**
  * Created by Yannic Rieger on 05.11.2017.
  * <p>
  * @author Yannic Rieger
  */
-class FriendRequestListener : AtlasPacketListener<FriendInviteRequestPacket> {
-    
-    override fun onPacketReceived(packet: FriendInviteRequestPacket) {
-        friendsClient!!.proxy.getPlayer(packet.receiver).let {
-            val initialSenderName = PlayerResolver.resolveUuidToName(packet.sender).get()
+class FriendRequestListener : FriendInviteListener {
+    override fun onInvite(sender: UUID, invited: UUID) {
+        friendsClient!!.proxy.getPlayer(invited).let {
+            val initialSenderName = PlayerResolver.resolveUuidToName(sender).get()
         
             // nasty little workaround to get the fancy message centered as well.
             val spaces = MessageUtil.getSpacesToCenter("§a[ANNEHMEN]§6 | §c[ABLEHNEN]")
