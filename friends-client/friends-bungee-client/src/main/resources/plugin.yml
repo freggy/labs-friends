@@ -1,0 +1,4 @@
+name: FriendsBungeeClient
+author: freggy
+version: 1.0
+main: de.bergwerklabs.friends.client.bungee.FriendsBungeeClient
