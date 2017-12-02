@@ -56,7 +56,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>de.bergwerklabs.party.server.PartyServer</mainClass>
+                                    <mainClass>de.bergwerklabs.friends.api.FriendsApi</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>

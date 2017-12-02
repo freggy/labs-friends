@@ -1,4 +1,4 @@
-package de.bergwerklabs.friends.client.bukkit.command
+package de.bergwerklabs.friends.client.bungee.command
 
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.framework.commons.bungee.command.BungeeParentCommand

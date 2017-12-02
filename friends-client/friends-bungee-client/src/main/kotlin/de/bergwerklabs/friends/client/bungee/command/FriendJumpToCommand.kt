@@ -1,8 +1,8 @@
-package de.bergwerklabs.friends.client.bukkit.command
+package de.bergwerklabs.friends.client.bungee.command
 
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
-import de.bergwerklabs.friends.client.bukkit.friendsClient
+import de.bergwerklabs.friends.client.bungee.friendsClient
 import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.connection.ProxiedPlayer
 

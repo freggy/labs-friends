@@ -20,7 +20,7 @@ class FriendsApi {
     
     companion object {
         
-        private val service = AtlantisPackageService(FriendInviteResponsePacket::class.java)
+        private val service = AtlantisPackageService(FriendInviteResponsePacket::class.java, CachePacket::class.java)
         private val responseListener = HashSet<FriendRequestResponseListener>()
         private val requestListener = HashSet<FriendInviteListener>()
         
@@ -39,7 +39,7 @@ class FriendsApi {
                     responseListener.forEach { listeners -> listeners.onResponse(FriendRequestResponse.ALREADY_FRIENDS, sender, receiver) }
                     return
                 }
-                info.pendingInvites.any { requestEntry -> requestEntry.requested == receiver } -> {
+                info.pendingInvites.any { requestEntry -> requestEntry.requester == receiver } -> {
                     responseListener.forEach { listeners -> listeners.onResponse(FriendRequestResponse.ALREADY_REQUESTED, sender, receiver) }
                     return
                 }
@@ -59,7 +59,7 @@ class FriendsApi {
         @JvmStatic
         fun removeFriend(from: UUID, toRemove: UUID) {
             // TODO: cache packet
-            service.sendPackage(RemoveFriendPacket(toRemove, from))
+            //service.sendPackage(RemoveFriendPacket(toRemove, from))
         }
         
         @JvmStatic

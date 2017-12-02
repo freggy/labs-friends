@@ -1,4 +1,4 @@
-package de.bergwerklabs.friends.client.bukkit
+package de.bergwerklabs.friends.client.bungee
 
 import de.bergwerklabs.atlantis.api.friends.FriendRequestResponse
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
