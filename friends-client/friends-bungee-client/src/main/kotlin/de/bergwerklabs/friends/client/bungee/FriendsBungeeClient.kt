@@ -22,7 +22,7 @@ internal var friendsClient: FriendsBungeeClient? = null
 class FriendsBungeeClient : Plugin(), Listener {
     
     val messenger = PluginMessenger("Friends")
-    val zBridge = ZBridge("forumpd", "fceAVWB5LNdt6aSD")
+    val zBridge = ZBridge("", "")
     
     override fun onEnable() {
         friendsClient = this

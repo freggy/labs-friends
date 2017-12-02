@@ -1,6 +1,7 @@
 package de.bergwerklabs.friends.client.bungee.command
 
 import com.google.common.collect.Iterables
+import com.google.common.collect.Ordering
 import de.bergwerklabs.api.cache.pojo.friends.FriendEntry
 import de.bergwerklabs.api.cache.pojo.players.online.OnlinePlayerCacheEntry
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
@@ -15,6 +16,7 @@ import net.md_5.bungee.api.chat.ComponentBuilder
 import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.connection.ProxiedPlayer
+import java.sql.Timestamp
 import java.util.*
 
 /**
@@ -35,22 +37,30 @@ class FriendListCommand : BungeeCommand {
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
             val friendList = FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList
-            println(friendList.size)
             if (friendList.isNotEmpty()) {
-                sender.sendMessage("§6§m-------§b Freundesliste §6§m-------")
-                
                 var page = 1
+                
                 if (args!!.isNotEmpty()) {
-    
                     if (args!![0].isNullOrEmpty() || args[0].isBlank()) {
                         friendsClient!!.messenger.message("§cEin Fehler ist aufgetreten.", sender)
                         return
                     }
                     page = args[0].toInt()
                 }
-            
+                
+                val sorted = friendList.sortedWith(kotlin.Comparator { entry1, entry2 -> Timestamp.valueOf(entry1.created).compareTo(Timestamp.valueOf(entry2.created))})
+                val pages = Iterables.partition(sorted, pageSize).toList()
+    
+                if (page > pages.size || page <= 0) {
+                    friendsClient!!.messenger.message("§cSeitenzahl zu groß oder zu klein.", sender)
+                    return
+                }
+                
+                
+                sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Freundesliste §6§m-------"))
+                
                 try {
-                    this.listFriends(page, friendList, sender)
+                    this.listFriends(page, pages, sender)
                 }
                 catch (ex: IllegalArgumentException) {
                     ex.printStackTrace()
@@ -66,60 +76,51 @@ class FriendListCommand : BungeeCommand {
      * The number of player displayed is defined by [pageSize] which is currently 10.
      *
      * @param page    page the player wants to navigate to.
-     * @param friends set containing all the players friends.
+     * @param pages   contains all the players friends.
      * @param player  player that executed the command.
      */
-    private fun listFriends(page: Int, friends: Set<FriendEntry>, player: ProxiedPlayer) {
-        val pages = Iterables.toArray(Iterables.paddedPartition(friends, pageSize), List::class.java) as Array<List<FriendEntry?>>
-        
-        if (page > pages.size || page <= 0) {
-            friendsClient!!.messenger.message("§cSeitenzahl zu groß oder zu klein.", player)
-            return
-        }
-        
+    private fun listFriends(page: Int, pages: List<List<FriendEntry>>, player: ProxiedPlayer) {
         pages[page - 1]
                 .stream()
                 .filter(Objects::nonNull)
                 .map { entry ->
                     object {
                         val onlineInfo = PlayerResolver.getOnlinePlayerCacheEntry(entry!!.friend.toString())
-                        val friendName =  PlayerResolver.resolveUuidToName(entry!!.friend)
+                        val friendName =  PlayerResolver.resolveUuidToName(entry!!.friend).orElse(":(")
                         val friendUuid = entry!!.friend
                         val friendRankColor = friendsClient!!.zBridge.getRankColor(friendUuid)
                     }
                 }
                 .sorted  { obj1, obj2 -> Integer.compare(obj1.friendRankColor.ordinal, obj2.friendRankColor.ordinal) }
-                .forEach { obj -> this.displayInfo(player, obj.onlineInfo, obj.friendName, obj.friendUuid, obj.friendRankColor) }
+                .forEach { obj -> this.displayInfo(player, obj.onlineInfo, obj.friendName, obj.friendRankColor) }
     }
     
     /**
      *
      */
-    private fun displayInfo(player: ProxiedPlayer, onlineInfo: Optional<OnlinePlayerCacheEntry>, friendName: Optional<String>, friendUuid: UUID, friendRankColor: ChatColor) {
-        friendName.ifPresent {
-            val message = ComponentBuilder("✖").color(ChatColor.RED).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend remove $it"))
-                    .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Entferne $it aus der Freundesliste.")))
-                
-                    .append("✸").color(ChatColor.GOLD).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/party invite $it"))
-                    .event(HoverEvent(HoverEvent.Action.SHOW_TEXT,  TextComponent.fromLegacyText("Lade $it in eine Party ein")))
-                
-                    .append("➥").color(ChatColor.AQUA).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend jump $it"))
-                    .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Joine $it nach")))
-                
-                    .append(" $it").color(friendRankColor)
-                    .append(" - ").color(ChatColor.DARK_GRAY)
+    private fun displayInfo(player: ProxiedPlayer, onlineInfo: Optional<OnlinePlayerCacheEntry>, friendName: String, friendRankColor: ChatColor) {
         
-            if (onlineInfo.isPresent) {
-                val currentServer = onlineInfo.get().currentServer
+        val message = ComponentBuilder("✖").color(ChatColor.RED).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend remove $friendName"))
+                .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Entferne $friendName aus der Freundesliste.")))
                 
-                // TODO: generate display name
-                message.append(currentServer.service).color(ChatColor.GRAY)
-                       .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Id: ${currentServer.containerId}")))
-            }
-            else message.append("OFFLINE")
-                        .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Im Limbus")))
-                        .color(ChatColor.RED)
-            player.sendMessage(ChatMessageType.CHAT, *message.create())
+                .append("✸").color(ChatColor.GOLD).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/party invite $friendName"))
+                .event(HoverEvent(HoverEvent.Action.SHOW_TEXT,  TextComponent.fromLegacyText("Lade $friendName in eine Party ein")))
+                
+                .append("➥").color(ChatColor.AQUA).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend jump $friendName"))
+                .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Joine $friendName nach")))
+                
+                .append(" $friendName").color(friendRankColor)
+                .append(" - ").color(ChatColor.DARK_GRAY)
+        
+        if (onlineInfo.isPresent) {
+            val currentServer = onlineInfo.get().currentServer
+            // TODO: generate display name
+            message.append(currentServer.service).color(ChatColor.GRAY)
+                   .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Id: ${currentServer.containerId}")))
         }
+        else message.append("OFFLINE")
+                    .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Im Limbus")))
+                    .color(ChatColor.RED)
+        player.sendMessage(ChatMessageType.CHAT, *message.create())
     }
 }
