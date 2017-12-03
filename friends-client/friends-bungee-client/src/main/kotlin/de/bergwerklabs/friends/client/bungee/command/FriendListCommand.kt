@@ -7,6 +7,8 @@ import de.bergwerklabs.api.cache.pojo.players.online.OnlinePlayerCacheEntry
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.friends.api.FriendsApi
+import de.bergwerklabs.friends.client.bungee.common.Entry
+import de.bergwerklabs.friends.client.bungee.common.list
 import de.bergwerklabs.friends.client.bungee.friendsClient
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.ChatMessageType
@@ -34,12 +36,19 @@ class FriendListCommand : BungeeCommand {
     
     override fun getUsage() = "/friend list"
     
+    private val funnySentences = arrayOf(
+            "Keine Freunde. Schade.",
+            "Du hast leider keine Freunde. Wenn du dich danach besser fühlst: Ist nur ein Datenbank-Problem",
+            "Wir konnten leider keine Freunde finden :(",
+            "Du hast noch keine Freunde."
+    )
+    
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
             val friendList = FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList
             if (friendList.isNotEmpty()) {
                 var page = 1
-                
+    
                 if (args!!.isNotEmpty()) {
                     if (args!![0].isNullOrEmpty() || args[0].isBlank()) {
                         friendsClient!!.messenger.message("§cEin Fehler ist aufgetreten.", sender)
@@ -59,25 +68,33 @@ class FriendListCommand : BungeeCommand {
                 sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Freundesliste §6§m-------"))
                 
                 try {
-                    this.listFriends(page, pages, sender)
+                    val converted = pages
+                            .map { friendPage -> friendPage
+                            .map { friend -> Entry(
+                                    PlayerResolver.getOnlinePlayerCacheEntry(friend.friend.toString()),
+                                    PlayerResolver.resolveUuidToName(friend.friend).orElse(":("),
+                                    friendsClient!!.zBridge.getRankColor(friend.friend))
+                            }
+                    }
+                    list(page, converted, sender, true)
                 }
                 catch (ex: Exception) {
                     ex.printStackTrace()
                 }
             
-                sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${(Math.ceil(friendList.size.toDouble() / pageSize)).toInt()}] §6§m----------"))
+                sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${(Math.ceil(friendList.size.toDouble() / pageSize)).toInt()}] §6§m-----------"))
+            }
+            else {
+                friendsClient!!.messenger.message("§c${funnySentences[Random().nextInt(funnySentences.size)]}", sender)
+                return
             }
         }
     }
     
-    /**
-     * Lists 10 friends at a time and displays them to the player.
-     * The number of player displayed is defined by [pageSize] which is currently 10.
-     *
-     * @param page    page the player wants to navigate to.
-     * @param pages   contains all the players friends.
-     * @param player  player that executed the command.
-     */
+    
+    /*
+    
+    
     private fun listFriends(page: Int, pages: List<List<FriendEntry>>, player: ProxiedPlayer) {
         pages[page - 1]
                 .stream()
@@ -112,14 +129,17 @@ class FriendListCommand : BungeeCommand {
                 .append(" - ").color(ChatColor.DARK_GRAY)
         
         if (onlineInfo.isPresent) {
-            val currentServer = onlineInfo.get().currentServer
-            // TODO: generate display name
-            message.append(currentServer.service).color(ChatColor.GRAY)
-                   .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Id: ${currentServer.containerId}")))
+            message.append("ONLINE").color(ChatColor.GRAY)
+                    .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("LOLOLOLOLOLOL")))
+            onlineInfo.get().currentServer?.let {
+                // TODO: generate display name
+                message.append(it.service).color(ChatColor.GRAY)
+                        .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Id: ${it.containerId}")))
+            }
         }
         else message.append("OFFLINE")
                     .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Im Limbus")))
                     .color(ChatColor.RED)
         player.sendMessage(ChatMessageType.CHAT, *message.create())
-    }
+    } */
 }

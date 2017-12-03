@@ -45,23 +45,24 @@ class FriendsApi {
         
         @JvmStatic
         fun sendInvite(sender: UUID, receiver: UUID) {
-            val info = retrieveFriendInfo(sender)
-    
+            val friendList = getFriendlist(sender)
+            val pendingInvites = getPendingRequests(receiver)
+            
             when {
-                info.friendList.any { friendEntry -> friendEntry.friend == receiver }          -> {
+                friendList.any { friendEntry -> friendEntry.friend == receiver }          -> {
                     responseListener.forEach { listeners -> listeners.onResponse(FriendRequestResponse.ALREADY_FRIENDS, sender, receiver) }
                     return
                 }
-                info.pendingInvites.any { requestEntry -> requestEntry.requester == receiver } -> {
+                pendingInvites.any { requestEntry -> requestEntry.requester == sender } -> {
                     responseListener.forEach { listeners -> listeners.onResponse(FriendRequestResponse.ALREADY_REQUESTED, sender, receiver) }
                     return
                 }
-                info.friendList.size >= 100                                                    -> { // TODO: check if premium
+                friendList.size >= 100                                                    -> { // TODO: check if premium
                     responseListener.forEach { listeners -> listeners.onResponse(FriendRequestResponse.FRIEND_LIST_FULL, sender, receiver) }
                     return
                 }
                 else -> {
-                    service.sendPackage(CacheUpdatePacket(sender.toString(), hashSetOf(RequestEntry(getTimestamp(), receiver)), AtlantisCache.PENDING_FRIEND_REQUESTS_CACHE, UpdateAction.ADD))
+                    service.sendPackage(CacheUpdatePacket(receiver.toString(), hashSetOf(RequestEntry(getTimestamp(), sender, receiver)), AtlantisCache.PENDING_FRIEND_REQUESTS_CACHE, UpdateAction.ADD))
                     service.sendPackage(FriendInviteRequestPacket(receiver, sender))
                 }
             }
@@ -69,16 +70,19 @@ class FriendsApi {
         
         @JvmStatic
         fun respondToInvite(sender: UUID, receiver: UUID, response: FriendRequestResponse) {
-            if (response == FriendRequestResponse.ACCEPTED)
-                service.sendPackage(CacheUpdatePacket(sender.toString(), hashSetOf(FriendEntry(getTimestamp(), receiver)), AtlantisCache.FRIEND_LIST_CACHE, UpdateAction.ADD))
-            
-            service.sendPackage(CacheUpdatePacket(sender.toString(), hashSetOf(RequestEntry(null, sender)), AtlantisCache.PENDING_FRIEND_REQUESTS_CACHE, UpdateAction.REMOVE))
+            if (response == FriendRequestResponse.ACCEPTED) {
+                service.sendPackage(CacheUpdatePacket(sender.toString(), hashSetOf(FriendEntry(getTimestamp(), receiver, sender)), AtlantisCache.FRIEND_LIST_CACHE, UpdateAction.ADD))
+                service.sendPackage(CacheUpdatePacket(receiver.toString(), hashSetOf(FriendEntry(getTimestamp(), sender, receiver)), AtlantisCache.FRIEND_LIST_CACHE, UpdateAction.ADD))
+            }
+            service.sendPackage(CacheUpdatePacket(sender.toString(), hashSetOf(RequestEntry(null, receiver, sender)), AtlantisCache.PENDING_FRIEND_REQUESTS_CACHE, UpdateAction.REMOVE))
+            service.sendPackage(CacheUpdatePacket(receiver.toString(), hashSetOf(RequestEntry(null, sender, receiver)), AtlantisCache.PENDING_FRIEND_REQUESTS_CACHE, UpdateAction.REMOVE))
             service.sendPackage(FriendInviteResponsePacket(sender, receiver, response))
         }
         
         @JvmStatic
         fun removeFriend(from: UUID, toRemove: UUID) {
-            service.sendPackage(CacheUpdatePacket(from.toString(), hashSetOf(FriendEntry(getTimestamp(), toRemove)), AtlantisCache.FRIEND_LIST_CACHE, UpdateAction.REMOVE))
+            service.sendPackage(CacheUpdatePacket(from.toString(), hashSetOf(FriendEntry(getTimestamp(), toRemove, from)), AtlantisCache.FRIEND_LIST_CACHE, UpdateAction.REMOVE))
+            service.sendPackage(CacheUpdatePacket(toRemove.toString(), hashSetOf(FriendEntry(getTimestamp(), from, toRemove)), AtlantisCache.FRIEND_LIST_CACHE, UpdateAction.REMOVE))
         }
         
         @JvmStatic
@@ -86,17 +90,17 @@ class FriendsApi {
         
         @JvmStatic
         fun getPendingRequests(player: UUID): Set<RequestEntry> {
-            val packet = service.sendRequestWithFuture(CacheLoadAndGetPacket<UUID>(player.toString(), AtlantisCache.FRIEND_LIST_CACHE), CachePacket::class.java)
+            val packet = service.sendRequestWithFuture(CacheLoadAndGetPacket<UUID>(player.toString(), AtlantisCache.PENDING_FRIEND_REQUESTS_CACHE), CachePacket::class.java)
                     .get(4, TimeUnit.SECONDS)
-            return packet.cacheObject as HashSet<RequestEntry>
+            return (packet.cacheObject as HashSet<RequestEntry>).filter { entry -> !entry.removeEntry() }.toSet()
         }
     
         @JvmStatic
         fun getFriendlist(player: UUID): Set<FriendEntry> {
-            val packet = service.sendRequestWithFuture(CacheLoadAndGetPacket<UUID>(player.toString(), AtlantisCache.PENDING_FRIEND_REQUESTS_CACHE), CachePacket::class.java)
+            val packet = service.sendRequestWithFuture(CacheLoadAndGetPacket<UUID>(player.toString(), AtlantisCache.FRIEND_LIST_CACHE), CachePacket::class.java)
                     .get(4, TimeUnit.SECONDS)
             
-            return packet.cacheObject as HashSet<FriendEntry>
+            return (packet.cacheObject as HashSet<FriendEntry>).filter { entry -> !entry.removeEntry() }.toSet()
         }
         
         @JvmStatic

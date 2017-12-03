@@ -8,9 +8,11 @@ import de.bergwerklabs.framework.commons.bungee.chat.PluginMessenger
 import de.bergwerklabs.framework.commons.bungee.permissions.ZBridge
 import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.command.*
-import net.md_5.bungee.api.ChatColor
+import de.bergwerklabs.friends.client.bungee.common.getLoginMessage
+import de.bergwerklabs.friends.client.bungee.common.getLogoutMessage
+import de.bergwerklabs.friends.client.bungee.common.sendMessageToFriends
 import net.md_5.bungee.api.ChatMessageType
-import net.md_5.bungee.api.chat.*
+import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.connection.ProxiedPlayer
 import net.md_5.bungee.api.event.PlayerDisconnectEvent
 import net.md_5.bungee.api.event.PostLoginEvent
@@ -46,7 +48,9 @@ class FriendsBungeeClient : Plugin(), Listener {
                 FriendListCommand(),
                 InviteCommand(),
                 FriendDenyCommand(),
-                FriendAcceptCommand()))
+                FriendAcceptCommand(),
+                FriendRemoveCommand(),
+                FriendListInvitesCommand()))
         
         this.proxy.pluginManager.registerListener(this, this)
         FriendsApi.registerResponseListener(RequestResponseListener())
@@ -54,9 +58,17 @@ class FriendsBungeeClient : Plugin(), Listener {
         
         this.service.addListener(FriendLoginPacket::class.java, { packet ->
             val receiver = this.proxy.getPlayer(packet.messageReceiver)
-            receiver?.sendMessage(ChatMessageType.CHAT, *this.getLoginMessage(packet.onlinePlayer, this.zBridge.getRankColor(receiver.uniqueId)))
+            receiver?.let {
+                friendsClient!!.messenger.message(TextComponent.toLegacyText(*getLoginMessage(packet.onlinePlayer.name, this.zBridge.getRankColor(packet.onlinePlayer.uuid))), receiver)
+            }
         })
         
+        this.service.addListener(FriendLoginPacket::class.java, { packet ->
+            val receiver = this.proxy.getPlayer(packet.messageReceiver)
+            receiver?.let {
+                friendsClient!!.messenger.message(TextComponent.toLegacyText(*getLogoutMessage(packet.onlinePlayer.name, this.zBridge.getRankColor(packet.onlinePlayer.uuid))), receiver)
+            }
+        })
     }
     
     @EventHandler
@@ -65,41 +77,29 @@ class FriendsBungeeClient : Plugin(), Listener {
         val info = FriendsApi.retrieveFriendInfo(player.uniqueId)
         requests.putIfAbsent(player.uniqueId, HashSet())
         
-        if (info.pendingInvites.isNotEmpty())  {
-            friendsClient!!.messenger.message("Du hast ${info.pendingInvites.size} ausstehende Anfragen.", player)
+        info.pendingInvites.forEach { inv ->
+            friendsClient!!.messenger.message("Acc ${inv.acceptor}", player)
+            friendsClient!!.messenger.message("Req ${inv.requester}", player)
         }
         
-        info.friendList.forEach { entry ->
-            val playerOnServer = this.proxy.getPlayer(entry.friend)
-            
-            if (playerOnServer != null) {
-                playerOnServer.sendMessage(ChatMessageType.CHAT, *this.getLoginMessage(playerOnServer.name, this.zBridge.getRankColor(playerOnServer.uniqueId)))
-            }
-            else {
-                this.service.sendPackage(FriendLoginPacket(player.name, entry.friend))
-            }
+        if (info.pendingInvites.isNotEmpty())  {
+            if (info.pendingInvites.size == 1)
+                friendsClient!!.messenger.message("Du hast §beine §7ausstehende Anfrage.", player)
+            else
+                friendsClient!!.messenger.message("Du hast §b${info.pendingInvites.size} §7ausstehende Anfragen.", player)
         }
-    }
-    
-    fun getLoginMessage(name: String, color: ChatColor): Array<BaseComponent> {
-        return ComponentBuilder(name).color(color)
-                .append(" ist ").color(ChatColor.GRAY)
-                .append("online").color(ChatColor.GREEN)
-                .append("[").color(ChatColor.GRAY)
-                .append("EINLADEN").color(ChatColor.GOLD)
-                .event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/party invite $name"))
-                .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("$name zu einer party einladen.")))
-                .create()
+        sendMessageToFriends(info.friendList, this.service, this.proxy, player, true)
     }
     
     @EventHandler
     fun onPlayerDisconnect(event: PlayerDisconnectEvent) {
-        requests.remove(event.player.uniqueId)
+        val player = event.player
+        requests.remove(player.uniqueId)
+        sendMessageToFriends(FriendsApi.getFriendlist(player.uniqueId), this.service, this.proxy, player, false)
     }
     
     internal fun process(name: String, sender: ProxiedPlayer, friendList: Set<FriendEntry>, func: (UUID, UUID) -> Unit) {
         val playerOnServer = this.proxy.getPlayer(name)
-        
         // TODO: refactor
         
         // if the player is on the server we don't have to resolve the name to a UUID.
@@ -112,7 +112,6 @@ class FriendsBungeeClient : Plugin(), Listener {
                 friendsClient!!.messenger.message("§cDieser Spieler hat dir keine Anfrage gesendet.", sender)
                 return
             }
-            
             this.requests[playerOnServer.uniqueId]!!.remove(sender.uniqueId)
             func.invoke(sender.uniqueId, playerOnServer.uniqueId)
         }
