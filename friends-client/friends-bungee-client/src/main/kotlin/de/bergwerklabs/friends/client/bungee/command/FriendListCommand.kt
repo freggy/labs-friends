@@ -56,13 +56,12 @@ class FriendListCommand : BungeeCommand {
                     return
                 }
                 
-                
                 sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Freundesliste §6§m-------"))
                 
                 try {
                     this.listFriends(page, pages, sender)
                 }
-                catch (ex: IllegalArgumentException) {
+                catch (ex: Exception) {
                     ex.printStackTrace()
                 }
             

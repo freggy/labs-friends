@@ -16,7 +16,7 @@ import java.util.*
  */
 class FriendRequestListener : FriendInviteListener {
     override fun onInvite(sender: UUID, invited: UUID) {
-        friendsClient!!.proxy.getPlayer(invited).let {
+        friendsClient!!.proxy.getPlayer(invited).let { inv ->
             val initialSenderName = PlayerResolver.resolveUuidToName(sender).get()
         
             // nasty little workaround to get the fancy message centered as well.
@@ -24,18 +24,18 @@ class FriendRequestListener : FriendInviteListener {
             val builder = StringBuilder()
             for (i in 0..spaces) builder.append(" ")
         
-            val message = ComponentBuilder("$builder§a[ANNEHMEN]").color(ChatColor.GREEN).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend accept"))
+            val message = ComponentBuilder("$builder§a[ANNEHMEN]").color(ChatColor.GREEN).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend accept $initialSenderName"))
                     .append(" ❘ ").color(ChatColor.GOLD)
-                    .append("[ABLEHNEN]").color(ChatColor.RED).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend deny"))
+                    .append("[ABLEHNEN]").color(ChatColor.RED).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend deny $initialSenderName"))
                     .create()
         
-            MessageUtil.sendCenteredMessage(it, "§6§m-------§b Freunschaftsanfrage§6§m-------")
-            MessageUtil.sendCenteredMessage(it, " ")
-            MessageUtil.sendCenteredMessage(it, "§7Du hast eine Anfrage von §a$initialSenderName §7erhalten.")
-            MessageUtil.sendCenteredMessage(it," ")
-            it.sendMessage(ChatMessageType.CHAT, *message)
-            MessageUtil.sendCenteredMessage(it," ")
-            MessageUtil.sendCenteredMessage(it, "§6§m--------------")
+            MessageUtil.sendCenteredMessage(inv, "§6§m-------§b Freunschaftsanfrage §6§m-------")
+            MessageUtil.sendCenteredMessage(inv, " ")
+            MessageUtil.sendCenteredMessage(inv, "§7Du hast eine Anfrage von §a$initialSenderName §7erhalten.")
+            MessageUtil.sendCenteredMessage(inv," ")
+            inv.sendMessage(ChatMessageType.CHAT, *message)
+            MessageUtil.sendCenteredMessage(inv," ")
+            MessageUtil.sendCenteredMessage(inv, "§6§m--------------")
         }
     }
 }

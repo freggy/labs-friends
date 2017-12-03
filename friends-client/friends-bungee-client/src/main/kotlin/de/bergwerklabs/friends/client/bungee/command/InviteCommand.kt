@@ -26,10 +26,14 @@ class InviteCommand : BungeeCommand {
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
+            
             val label = args!![0]
             val optional = PlayerResolver.resolveNameToUuid(label)
+            
             if (optional.isPresent) {
-                FriendsApi.sendInvite(sender.uniqueId, optional.get())
+                val receiver = optional.get()
+                friendsClient!!.requests[sender.uniqueId]!!.add(receiver)
+                FriendsApi.sendInvite(sender.uniqueId, receiver)
             }
             else friendsClient!!.messenger.message("§cDieser Spieler ist uns nicht bekannt :(", sender)
         }
