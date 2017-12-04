@@ -31,6 +31,7 @@ class FriendDenyCommand : BungeeCommand {
             
             friendsClient!!.process(args[0], sender, friendList, { denier, denied ->
                 FriendsApi.respondToInvite(denier, denied, FriendRequestResponse.DENIED)
+                friendsClient!!.messenger.message("§bDu hast die Anfrage §cabgelehnt", sender)
             })
         }
     }

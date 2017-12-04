@@ -62,13 +62,13 @@ class FriendListInvitesCommand : BungeeCommand {
                                     friendsClient!!.zBridge.getRankColor(pending.requester))
                             }
                     }
-                    list(page, converted, sender, true)
+                    list(page, converted, sender, false)
                 }
                 catch (ex: Exception) {
                     ex.printStackTrace()
                 }
             
-                sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${(Math.ceil(pending.size.toDouble() / pageSize)).toInt()}] §6§m-----------"))
+                sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${(Math.ceil(pending.size.toDouble() / pageSize)).toInt()}] §6§m--------"))
             }
             else {
                 friendsClient!!.messenger.message("§cDu hast keine ausstehenden Anfragen.", sender)
