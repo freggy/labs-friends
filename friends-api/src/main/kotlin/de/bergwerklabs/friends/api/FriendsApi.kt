@@ -1,6 +1,5 @@
 package de.bergwerklabs.friends.api
 
-import de.bergwerklabs.api.cache.pojo.PlayerNameToUuidMapping
 import de.bergwerklabs.api.cache.pojo.friends.FriendEntry
 import de.bergwerklabs.api.cache.pojo.friends.RequestEntry
 import de.bergwerklabs.atlantis.api.corepackages.AtlantisCache
@@ -9,7 +8,6 @@ import de.bergwerklabs.atlantis.api.corepackages.cache.CachePacket
 import de.bergwerklabs.atlantis.api.corepackages.cache.CacheUpdatePacket
 import de.bergwerklabs.atlantis.api.corepackages.cache.UpdateAction
 import de.bergwerklabs.atlantis.api.friends.*
-import de.bergwerklabs.atlantis.client.base.PlayerResolver
 import de.bergwerklabs.atlantis.client.base.util.AtlantisPackageService
 import java.sql.Timestamp
 import java.util.*

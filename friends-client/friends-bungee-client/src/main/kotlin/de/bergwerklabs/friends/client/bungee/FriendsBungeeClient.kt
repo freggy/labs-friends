@@ -5,6 +5,7 @@ import de.bergwerklabs.atlantis.api.friends.FriendLoginPacket
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
 import de.bergwerklabs.atlantis.client.base.util.AtlantisPackageService
 import de.bergwerklabs.framework.commons.bungee.chat.PluginMessenger
+import de.bergwerklabs.framework.commons.bungee.command.help.CommandHelpDisplay
 import de.bergwerklabs.framework.commons.bungee.permissions.ZBridge
 import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.command.*
@@ -33,14 +34,15 @@ internal var friendsClient: FriendsBungeeClient? = null
 class FriendsBungeeClient : Plugin(), Listener {
     
     val messenger = PluginMessenger("Friends")
-    val zBridge = ZBridge()
+    val zBridge = ZBridge("admin", "LphX3VULzQVgp2ry3f2ypkZKE5YeufMtaamfeNNNwZbLWyqm")
     val requests = HashMap<UUID, MutableSet<UUID>>()
+    lateinit var helpDisplay: CommandHelpDisplay
     private val service = AtlantisPackageService(FriendLoginPacket::class.java)
     
     override fun onEnable() {
         friendsClient = this
-        // TODO: add child commands
-        this.proxy.pluginManager.registerCommand(this, FriendParentCommand(
+        
+        val parent = FriendParentCommand(
                 "friend",
                 "",
                 "",
@@ -50,7 +52,10 @@ class FriendsBungeeClient : Plugin(), Listener {
                 FriendDenyCommand(),
                 FriendAcceptCommand(),
                 FriendRemoveCommand(),
-                FriendListInvitesCommand()))
+                FriendListInvitesCommand())
+        
+        this.proxy.pluginManager.registerCommand(this, parent)
+        this.helpDisplay = CommandHelpDisplay(parent.subCommands.toSet())
         
         this.proxy.pluginManager.registerListener(this, this)
         FriendsApi.registerResponseListener(RequestResponseListener())
