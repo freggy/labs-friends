@@ -23,12 +23,16 @@ class FriendRemoveCommand : BungeeCommand {
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         val name = args!![0]
         if (sender is ProxiedPlayer) {
-            PlayerResolver.resolveNameToUuid(name).ifPresent {
-                if (FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList.any { entry -> entry.friend == it }) {
-                    FriendsApi.removeFriend(sender.uniqueId, it)
-                    friendsClient!!.messenger.message("${friendsClient!!.zBridge.getRankColor(it)}$name§r wurde aus deiner Freundesliste entfernt.", sender)
+            
+            // PlayerResolver#resolveNameToUuid blocks
+            friendsClient!!.runAsync {
+                PlayerResolver.resolveNameToUuid(name).ifPresent {
+                    if (FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList.any { entry -> entry.friend == it }) {
+                        FriendsApi.removeFriend(sender.uniqueId, it)
+                        friendsClient!!.messenger.message("${friendsClient!!.zBridge.getRankColor(it)}$name§r wurde aus deiner Freundesliste entfernt.", sender)
+                    }
+                    else friendsClient!!.messenger.message("§cDieser Spieler ist nicht mit dir befreundet.", sender)
                 }
-                else friendsClient!!.messenger.message("§cDieser Spieler ist nicht mit dir befreundet.", sender)
             }
         }
     }

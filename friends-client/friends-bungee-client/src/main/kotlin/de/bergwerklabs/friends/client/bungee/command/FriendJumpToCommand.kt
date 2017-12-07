@@ -22,9 +22,13 @@ class FriendJumpToCommand : BungeeCommand {
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
             val to = args!![0]
-            PlayerResolver.getOnlinePlayerCacheEntry(to).ifPresent {
-                val info = it.currentServer
-                sender.connect(friendsClient!!.proxy.getServerInfo("${info.service}_${info.containerId}"))
+            
+            // PlayerResolver#getOnlinePlayerCacheEntry is blocking
+            friendsClient!!.runAsync {
+                PlayerResolver.getOnlinePlayerCacheEntry(to).ifPresent {
+                    val info = it.currentServer
+                    sender.connect(friendsClient!!.proxy.getServerInfo("${info.service}_${info.containerId}"))
+                }
             }
         }
     }

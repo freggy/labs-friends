@@ -52,23 +52,25 @@ class FriendListInvitesCommand : BungeeCommand {
                 }
             
                 sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Anfragen §6§m-------"))
-            
-                try {
-                    val converted = pages
-                            .map { pendingPage -> pendingPage
-                            .map { pending -> Entry(
-                                    PlayerResolver.getOnlinePlayerCacheEntry(pending.requester.toString()),
-                                    PlayerResolver.resolveUuidToName(pending.requester).orElse(":("),
-                                    friendsClient!!.zBridge.getRankColor(pending.requester))
-                            }
+                
+                // Run async because PlayerResolver methods are blocking the main thread
+                friendsClient!!.proxy.scheduler.runAsync(friendsClient!!, {
+                    try {
+                        val converted = pages
+                                .map { pendingPage -> pendingPage
+                                        .map { pending -> Entry(
+                                                PlayerResolver.getOnlinePlayerCacheEntry(pending.requester.toString()),
+                                                PlayerResolver.resolveUuidToName(pending.requester).orElse(":("),
+                                                friendsClient!!.zBridge.getRankColor(pending.requester))
+                                        }
+                                }
+                        list(page, converted, sender, false)
                     }
-                    list(page, converted, sender, false)
-                }
-                catch (ex: Exception) {
-                    ex.printStackTrace()
-                }
-            
-                sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${(Math.ceil(pending.size.toDouble() / pageSize)).toInt()}] §6§m--------"))
+                    catch (ex: Exception) {
+                        ex.printStackTrace()
+                    }
+                    sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${(Math.ceil(pending.size.toDouble() / pageSize)).toInt()}] §6§m--------"))
+                })
             }
             else {
                 friendsClient!!.messenger.message("§cDu hast keine ausstehenden Anfragen.", sender)

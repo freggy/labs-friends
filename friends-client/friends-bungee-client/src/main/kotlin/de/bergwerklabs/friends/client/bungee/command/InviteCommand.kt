@@ -26,17 +26,20 @@ class InviteCommand : BungeeCommand {
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
-            
             val label = args!![0]
-            val optional = PlayerResolver.resolveNameToUuid(label)
             
-            if (optional.isPresent) {
-                val receiver = optional.get()
-                friendsClient!!.requests[sender.uniqueId]!!.add(receiver)
-                FriendsApi.sendInvite(sender.uniqueId, receiver)
-                friendsClient!!.messenger.message("§7Deiner Anfrage wurde versendet.", sender)
+            // PlayerResolver#resolveNameToUuid blocks
+            friendsClient!!.runAsync {
+                val optional = PlayerResolver.resolveNameToUuid(label)
+    
+                if (optional.isPresent) {
+                    val receiver = optional.get()
+                    friendsClient!!.requests[sender.uniqueId]!!.add(receiver)
+                    FriendsApi.sendInvite(sender.uniqueId, receiver)
+                    friendsClient!!.messenger.message("§7Deiner Anfrage wurde versendet.", sender)
+                }
+                else friendsClient!!.messenger.message("§cDieser Spieler ist uns nicht bekannt :(", sender)
             }
-            else friendsClient!!.messenger.message("§cDieser Spieler ist uns nicht bekannt :(", sender)
         }
     }
 }

@@ -52,7 +52,8 @@ class FriendsBungeeClient : Plugin(), Listener {
                 FriendDenyCommand(),
                 FriendAcceptCommand(),
                 FriendRemoveCommand(),
-                FriendListInvitesCommand())
+                FriendListInvitesCommand(),
+                FriendHelpCommand())
         
         this.proxy.pluginManager.registerCommand(this, parent)
         this.helpDisplay = CommandHelpDisplay(parent.subCommands.toSet())
@@ -94,6 +95,13 @@ class FriendsBungeeClient : Plugin(), Listener {
                 friendsClient!!.messenger.message("Du hast §b${info.pendingInvites.size} §7ausstehende Anfragen.", player)
         }
         sendMessageToFriends(info.friendList, this.service, this.proxy, player, true)
+    }
+    
+    
+    fun runAsync(method: (Unit) -> Unit) {
+        this.proxy.scheduler.runAsync(this, {
+            method.invoke(Unit)
+        })
     }
     
     @EventHandler

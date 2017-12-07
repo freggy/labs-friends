@@ -22,17 +22,21 @@ class FriendDenyCommand : BungeeCommand {
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
-            val friendList = FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList
-            
-            if (args!!.isEmpty()) {
-                friendsClient!!.messenger.message("§cEin Fehler ist aufgetreten.", sender)
-                return
+    
+            // Run async because FriendsApi#retrieveFriendInfo is blocking
+            friendsClient!!.runAsync {
+                val friendList = FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList
+    
+                if (args!!.isEmpty()) {
+                    friendsClient!!.messenger.message("§cEin Fehler ist aufgetreten.", sender)
+                    return@runAsync
+                }
+    
+                friendsClient!!.process(args[0], sender, friendList, { denier, denied ->
+                    FriendsApi.respondToInvite(denier, denied, FriendRequestResponse.DENIED)
+                    friendsClient!!.messenger.message("§bDu hast die Anfrage §cabgelehnt", sender)
+                })
             }
-            
-            friendsClient!!.process(args[0], sender, friendList, { denier, denied ->
-                FriendsApi.respondToInvite(denier, denied, FriendRequestResponse.DENIED)
-                friendsClient!!.messenger.message("§bDu hast die Anfrage §cabgelehnt", sender)
-            })
         }
     }
 }

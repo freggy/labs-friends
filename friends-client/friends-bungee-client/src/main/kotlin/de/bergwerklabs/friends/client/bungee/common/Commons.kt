@@ -19,25 +19,28 @@ internal fun sendMessageToFriends(friendList: Set<FriendEntry>,
                                   proxy:      ProxyServer,
                                   player:     ProxiedPlayer,
                                   onLogin:    Boolean) {
-    friendList.forEach { entry ->
-        val playerOnServer = proxy.getPlayer(entry.friend)
+    
+    friendsClient!!.runAsync {
+        friendList.forEach { entry ->
+            val playerOnServer = proxy.getPlayer(entry.friend)
         
-        if (playerOnServer != null) {
-            val message = if (onLogin) {
-                getLoginMessage(player.name, friendsClient!!.zBridge.getRankColor(player.uniqueId))
+            if (playerOnServer != null) {
+                val message = if (onLogin) {
+                    getLoginMessage(player.name, friendsClient!!.zBridge.getRankColor(player.uniqueId))
+                }
+                else getLogoutMessage(player.name, friendsClient!!.zBridge.getRankColor(player.uniqueId))
+            
+                friendsClient!!.messenger.message(TextComponent.toLegacyText(*message), playerOnServer)
             }
-            else getLogoutMessage(player.name, friendsClient!!.zBridge.getRankColor(player.uniqueId))
+            else {
             
-            friendsClient!!.messenger.message(TextComponent.toLegacyText(*message), playerOnServer)
-        }
-        else {
+                val packet = if (onLogin) {
+                    FriendLoginPacket(PlayerNameToUuidMapping(player.name, player.uniqueId), entry.friend)
+                }
+                else FriendLogoutPacket(PlayerNameToUuidMapping(player.name, player.uniqueId), entry.friend)
             
-            val packet = if (onLogin) {
-                FriendLoginPacket(PlayerNameToUuidMapping(player.name, player.uniqueId), entry.friend)
+                service.sendPackage(packet)
             }
-            else FriendLogoutPacket(PlayerNameToUuidMapping(player.name, player.uniqueId), entry.friend)
-            
-            service.sendPackage(packet)
         }
     }
 }
