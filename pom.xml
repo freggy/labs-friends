@@ -13,6 +13,13 @@
         <module>friends-client</module>
     </modules>
 
+    <distributionManagement>
+        <repository>
+            <id>labs_nexus</id>
+            <url>http://devs.bergwerklabs.de:8081/repository/maven-snapshots/</url>
+        </repository>
+    </distributionManagement>
+
     <properties>
         <kotlin.version>1.1.4-3</kotlin.version>
     </properties>

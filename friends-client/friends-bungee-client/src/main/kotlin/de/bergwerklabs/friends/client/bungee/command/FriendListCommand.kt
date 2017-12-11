@@ -69,20 +69,16 @@ class FriendListCommand : BungeeCommand {
                 
                 // PlayerResolver methods are blocking the main thread
                 friendsClient!!.runAsync {
-                    try {
+                    
                         val converted = pages
                                 .map { friendPage -> friendPage
                                         .map { friend -> Entry(
-                                                PlayerResolver.getOnlinePlayerCacheEntry(friend.friend.toString()),
                                                 PlayerResolver.resolveUuidToName(friend.friend).orElse(":("),
                                                 friendsClient!!.zBridge.getRankColor(friend.friend))
                                         }
                                 }
                         list(page, converted, sender, true)
-                    }
-                    catch (ex: Exception) {
-                        ex.printStackTrace()
-                    }
+                    
     
                     sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${(Math.ceil(friendList.size.toDouble() / pageSize)).toInt()}] §6§m-----------"))
                 }

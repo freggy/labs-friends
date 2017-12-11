@@ -16,7 +16,7 @@ import java.util.*
  */
 class FriendRequestListener : FriendInviteListener {
     override fun onInvite(sender: UUID, invited: UUID) {
-        friendsClient!!.proxy.getPlayer(invited).let { inv ->
+        friendsClient!!.proxy.getPlayer(invited)?.let { inv ->
             friendsClient!!.runAsync {
                 val initialSenderName = PlayerResolver.resolveUuidToName(sender).get()
     

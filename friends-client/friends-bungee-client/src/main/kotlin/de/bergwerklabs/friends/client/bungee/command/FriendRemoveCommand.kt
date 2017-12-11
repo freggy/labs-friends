@@ -16,9 +16,9 @@ class FriendRemoveCommand : BungeeCommand {
     
     override fun getName() = "remove"
     
-    override fun getDescription() = ""
+    override fun getDescription() = "Entfernt einen Spieler aus der Freundesliste."
     
-    override fun getUsage() = ""
+    override fun getUsage() = "/friend remove <name>"
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         val name = args!![0]

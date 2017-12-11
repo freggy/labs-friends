@@ -2,6 +2,7 @@ package de.bergwerklabs.friends.client.bungee
 
 import de.bergwerklabs.api.cache.pojo.friends.FriendEntry
 import de.bergwerklabs.atlantis.api.friends.FriendLoginPacket
+import de.bergwerklabs.atlantis.api.friends.FriendLogoutPacket
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
 import de.bergwerklabs.atlantis.client.base.util.AtlantisPackageService
 import de.bergwerklabs.framework.commons.bungee.chat.PluginMessenger
@@ -34,7 +35,7 @@ internal var friendsClient: FriendsBungeeClient? = null
 class FriendsBungeeClient : Plugin(), Listener {
     
     val messenger = PluginMessenger("Friends")
-    val zBridge = ZBridge("admin", "LphX3VULzQVgp2ry3f2ypkZKE5YeufMtaamfeNNNwZbLWyqm")
+    val zBridge = ZBridge()
     val requests = HashMap<UUID, MutableSet<UUID>>()
     lateinit var helpDisplay: CommandHelpDisplay
     private val service = AtlantisPackageService(FriendLoginPacket::class.java)
@@ -53,6 +54,7 @@ class FriendsBungeeClient : Plugin(), Listener {
                 FriendAcceptCommand(),
                 FriendRemoveCommand(),
                 FriendListInvitesCommand(),
+                FriendJumpToCommand(),
                 FriendHelpCommand())
         
         this.proxy.pluginManager.registerCommand(this, parent)
@@ -69,7 +71,7 @@ class FriendsBungeeClient : Plugin(), Listener {
             }
         })
         
-        this.service.addListener(FriendLoginPacket::class.java, { packet ->
+        this.service.addListener(FriendLogoutPacket::class.java, { packet ->
             val receiver = this.proxy.getPlayer(packet.messageReceiver)
             receiver?.let {
                 friendsClient!!.messenger.message(TextComponent.toLegacyText(*getLogoutMessage(packet.onlinePlayer.name, this.zBridge.getRankColor(packet.onlinePlayer.uuid))), receiver)
@@ -79,22 +81,19 @@ class FriendsBungeeClient : Plugin(), Listener {
     
     @EventHandler
     fun onPlayerLogin(event: PostLoginEvent) {
-        val player = event.player
-        val info = FriendsApi.retrieveFriendInfo(player.uniqueId)
-        requests.putIfAbsent(player.uniqueId, HashSet())
-        
-        info.pendingInvites.forEach { inv ->
-            friendsClient!!.messenger.message("Acc ${inv.acceptor}", player)
-            friendsClient!!.messenger.message("Req ${inv.requester}", player)
+        this.runAsync {
+            val player = event.player
+            val info = FriendsApi.retrieveFriendInfo(player.uniqueId)
+            requests.putIfAbsent(player.uniqueId, HashSet())
+            sendMessageToFriends(info.friendList, this.service, this.proxy, player, true)
+    
+            if (info.pendingInvites.isNotEmpty())  {
+                if (info.pendingInvites.size == 1)
+                    friendsClient!!.messenger.message("Du hast §beine §7ausstehende Anfrage.", player)
+                else
+                    friendsClient!!.messenger.message("Du hast §b${info.pendingInvites.size} §7ausstehende Anfragen.", player)
+            }
         }
-        
-        if (info.pendingInvites.isNotEmpty())  {
-            if (info.pendingInvites.size == 1)
-                friendsClient!!.messenger.message("Du hast §beine §7ausstehende Anfrage.", player)
-            else
-                friendsClient!!.messenger.message("Du hast §b${info.pendingInvites.size} §7ausstehende Anfragen.", player)
-        }
-        sendMessageToFriends(info.friendList, this.service, this.proxy, player, true)
     }
     
     
@@ -108,7 +107,12 @@ class FriendsBungeeClient : Plugin(), Listener {
     fun onPlayerDisconnect(event: PlayerDisconnectEvent) {
         val player = event.player
         requests.remove(player.uniqueId)
-        sendMessageToFriends(FriendsApi.getFriendlist(player.uniqueId), this.service, this.proxy, player, false)
+        
+        /*
+        // TODO: fix
+        this.runAsync {
+            sendMessageToFriends(FriendsApi.getFriendlist(player.uniqueId), this.service, this.proxy, player, false)
+        } */
     }
     
     internal fun process(name: String, sender: ProxiedPlayer, friendList: Set<FriendEntry>, func: (UUID, UUID) -> Unit) {
@@ -136,11 +140,6 @@ class FriendsBungeeClient : Plugin(), Listener {
                     friendsClient!!.messenger.message("§cDieser Spieler ist bereits in deiner Freundesliste", sender)
                     return
                 }
-                else if (!this.requests[uuid]!!.contains(sender.uniqueId)) {
-                    friendsClient!!.messenger.message("§cDieser Spieler hat dir keine Anfrage gesendet.", sender)
-                    return
-                }
-                this.requests[uuid]!!.remove(sender.uniqueId)
                 func.invoke(sender.uniqueId, uuid)
             }
             else friendsClient!!.messenger.message("§cDieser Spieler ist uns nicht bekannt.", sender)

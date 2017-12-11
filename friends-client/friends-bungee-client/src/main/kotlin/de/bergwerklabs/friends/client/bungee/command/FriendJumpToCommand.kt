@@ -2,6 +2,7 @@ package de.bergwerklabs.friends.client.bungee.command
 
 import de.bergwerklabs.atlantis.client.base.PlayerResolver
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
+import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.friendsClient
 import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.connection.ProxiedPlayer
@@ -23,12 +24,30 @@ class FriendJumpToCommand : BungeeCommand {
         if (sender is ProxiedPlayer) {
             val to = args!![0]
             
+            if (args.isEmpty()) {
+                friendsClient!!.messenger.message("§cDu musst einen Namen angeben.", sender)
+                return
+            }
+            
             // PlayerResolver#getOnlinePlayerCacheEntry is blocking
             friendsClient!!.runAsync {
-                PlayerResolver.getOnlinePlayerCacheEntry(to).ifPresent {
-                    val info = it.currentServer
-                    sender.connect(friendsClient!!.proxy.getServerInfo("${info.service}_${info.containerId}"))
+                val nameOptional = PlayerResolver.resolveNameToUuid(to)
+                if (nameOptional.isPresent) {
+                    if (!FriendsApi.getFriendlist(sender.uniqueId).any { entry -> entry.friend == nameOptional.get() }) {
+                        friendsClient!!.messenger.message("§cDieser Spieler ist nicht in deiner Freundesliste.", sender)
+                        return@runAsync
+                    }
                 }
+                
+                val optional = PlayerResolver.getOnlinePlayerCacheEntry(to)
+                if (optional.isPresent) {
+                    val info = optional.get().currentServer
+                    println(info.containerId)
+                    println(info.service)
+                    println("${info.containerId}_${info.service}")
+                    sender.connect(friendsClient!!.proxy.getServerInfo("${info.containerId}_${info.service}"))
+                }
+                else friendsClient!!.messenger.message("§cDieser Spieler ist zur Zeit nicht online.", sender)
             }
         }
     }

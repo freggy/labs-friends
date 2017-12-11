@@ -6,6 +6,7 @@ import de.bergwerklabs.api.cache.pojo.players.online.OnlinePlayerCacheEntry
 import de.bergwerklabs.atlantis.api.friends.FriendLoginPacket
 import de.bergwerklabs.atlantis.api.friends.FriendLogoutPacket
 import de.bergwerklabs.atlantis.client.base.util.AtlantisPackageService
+import de.bergwerklabs.framework.commons.misc.FancyNameGenerator
 import de.bergwerklabs.friends.client.bungee.friendsClient
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.ChatMessageType
@@ -20,27 +21,25 @@ internal fun sendMessageToFriends(friendList: Set<FriendEntry>,
                                   player:     ProxiedPlayer,
                                   onLogin:    Boolean) {
     
-    friendsClient!!.runAsync {
-        friendList.forEach { entry ->
-            val playerOnServer = proxy.getPlayer(entry.friend)
-        
-            if (playerOnServer != null) {
-                val message = if (onLogin) {
-                    getLoginMessage(player.name, friendsClient!!.zBridge.getRankColor(player.uniqueId))
-                }
-                else getLogoutMessage(player.name, friendsClient!!.zBridge.getRankColor(player.uniqueId))
+    val message = if (onLogin) {
+        getLoginMessage(player.name, friendsClient!!.zBridge.getRankColor(player.uniqueId))
+    }
+    else getLogoutMessage(player.name, friendsClient!!.zBridge.getRankColor(player.uniqueId))
+    
+    friendList.forEach { entry ->
+        val playerOnServer = proxy.getPlayer(entry.friend)
+    
+        if (playerOnServer != null) {
+            friendsClient!!.messenger.message(TextComponent.toLegacyText(*message), playerOnServer)
+        }
+        else {
             
-                friendsClient!!.messenger.message(TextComponent.toLegacyText(*message), playerOnServer)
+            val packet = if (onLogin) {
+                FriendLoginPacket(PlayerNameToUuidMapping(player.name, player.uniqueId), entry.friend)
             }
-            else {
+            else FriendLogoutPacket(PlayerNameToUuidMapping(player.name, player.uniqueId), entry.friend)
             
-                val packet = if (onLogin) {
-                    FriendLoginPacket(PlayerNameToUuidMapping(player.name, player.uniqueId), entry.friend)
-                }
-                else FriendLogoutPacket(PlayerNameToUuidMapping(player.name, player.uniqueId), entry.friend)
-            
-                service.sendPackage(packet)
-            }
+            service.sendPackage(packet)
         }
     }
 }
@@ -57,6 +56,7 @@ internal fun list(page: Int, pages: List<List<Entry>>, player: ProxiedPlayer, is
     pages[page - 1]
             .stream()
             .filter(Objects::nonNull)
+            .sorted  { obj1, obj2 -> obj1.onlineInfo.isPresent.compareTo(obj2.onlineInfo.isPresent) }
             .sorted  { obj1, obj2 -> Integer.compare(obj1.rankColor.ordinal, obj2.rankColor.ordinal) }
             .forEach { obj -> displayInfo(player, obj.onlineInfo, obj.name, obj.rankColor, isFriendList) }
 }
@@ -70,15 +70,11 @@ private fun displayInfo(player:          ProxiedPlayer,
     val message = if (isFriendList) friendListComps(friendName, friendRankColor) else pendingComps(friendName, friendRankColor)
     
     if (onlineInfo.isPresent) {
-        message.append("ONLINE").color(ChatColor.GRAY)
-                .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("LOLOLOLOLOLOL")))
-        // TODO: use when proper information is in online player cache
-        /*
         onlineInfo.get().currentServer?.let {
             // TODO: generate display name
-            message.append(it.service).color(ChatColor.GRAY)
-                    .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Id: ${it.containerId}")))
-        } */
+            message.append(it.service.toUpperCase()).color(ChatColor.GRAY)
+                    .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Id: ${FancyNameGenerator.generate(it.containerId)}")))
+        }
     }
     else message.append("OFFLINE")
             .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Im Limbus")))
@@ -94,7 +90,7 @@ private fun friendListComps(friendName: String, friendRankColor: ChatColor): Com
             .append("✸").color(ChatColor.GOLD).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/party invite $friendName"))
             .event(HoverEvent(HoverEvent.Action.SHOW_TEXT,  TextComponent.fromLegacyText("Lade $friendName in eine Party ein")))
             
-            .append("➥").color(ChatColor.AQUA).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend jump $friendName"))
+            .append("➥").color(ChatColor.AQUA).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend tp $friendName"))
             .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Joine $friendName nach")))
             
             .append(" $friendName").color(friendRankColor)

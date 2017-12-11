@@ -13,7 +13,7 @@ import java.util.*
 class RequestResponseListener : FriendRequestResponseListener {
     
     override fun onResponse(response: FriendRequestResponse, sender: UUID, receiver: UUID) {
-        friendsClient!!.proxy.getPlayer(sender).let { player ->
+        friendsClient!!.proxy.getPlayer(sender)?.let { player ->
             friendsClient!!.runAsync {
                 PlayerResolver.resolveUuidToName(receiver).ifPresent {
                     val messenger = friendsClient!!.messenger

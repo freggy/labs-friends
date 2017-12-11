@@ -16,13 +16,9 @@ class InviteCommand : BungeeCommand {
     
     override fun getName() = "invite"
     
-    override fun getDescription(): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun getDescription() = "Schickt einem Spieler eine Freundschaftsanfrage."
     
-    override fun getUsage(): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun getUsage() = "/friend invite <spieler>"
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {

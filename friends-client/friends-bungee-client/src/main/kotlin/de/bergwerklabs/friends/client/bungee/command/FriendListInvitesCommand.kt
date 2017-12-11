@@ -26,7 +26,7 @@ class FriendListInvitesCommand : BungeeCommand {
     
     override fun getName() = "invites"
     
-    override fun getDescription() = "TODO" // TODO: descrpt.
+    override fun getDescription() = "Listet alle Freundschaftsanfragen auf."
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
     
@@ -59,7 +59,6 @@ class FriendListInvitesCommand : BungeeCommand {
                         val converted = pages
                                 .map { pendingPage -> pendingPage
                                         .map { pending -> Entry(
-                                                PlayerResolver.getOnlinePlayerCacheEntry(pending.requester.toString()),
                                                 PlayerResolver.resolveUuidToName(pending.requester).orElse(":("),
                                                 friendsClient!!.zBridge.getRankColor(pending.requester))
                                         }
