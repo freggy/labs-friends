@@ -53,12 +53,18 @@ internal fun sendMessageToFriends(friendList: Set<FriendEntry>,
  * @param player  player that executed the command.
  */
 internal fun list(page: Int, pages: List<List<Entry>>, player: ProxiedPlayer, isFriendList: Boolean) {
+    
     pages[page - 1]
             .stream()
             .filter(Objects::nonNull)
-            .sorted  { obj1, obj2 -> obj1.onlineInfo.isPresent.compareTo(obj2.onlineInfo.isPresent) }
-            .sorted  { obj1, obj2 -> Integer.compare(obj1.rankColor.ordinal, obj2.rankColor.ordinal) }
             .forEach { obj -> displayInfo(player, obj.onlineInfo, obj.name, obj.rankColor, isFriendList) }
+}
+
+
+internal fun compareFriends(entry1: Entry, entry2: Entry): Int {
+    val result = entry1.onlineInfo.isPresent.compareTo(entry2.onlineInfo.isPresent) * -1
+    if (result == 0) return Integer.compare(entry1.rankColor.ordinal, entry2.rankColor.ordinal)
+    return result
 }
 
 private fun displayInfo(player:          ProxiedPlayer,
@@ -71,7 +77,6 @@ private fun displayInfo(player:          ProxiedPlayer,
     
     if (onlineInfo.isPresent) {
         onlineInfo.get().currentServer?.let {
-            // TODO: generate display name
             message.append(it.service.toUpperCase()).color(ChatColor.GRAY)
                     .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Id: ${FancyNameGenerator.generate(it.containerId)}")))
         }

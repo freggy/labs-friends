@@ -8,6 +8,7 @@ import de.bergwerklabs.atlantis.client.base.PlayerResolver
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.common.Entry
+import de.bergwerklabs.friends.client.bungee.common.compareFriends
 import de.bergwerklabs.friends.client.bungee.common.list
 import de.bergwerklabs.friends.client.bungee.friendsClient
 import net.md_5.bungee.api.ChatColor
@@ -57,9 +58,15 @@ class FriendListCommand : BungeeCommand {
                     page = args[0].toInt()
                 }
                 
-                val sorted = friendList.sortedWith(kotlin.Comparator { entry1, entry2 -> Timestamp.valueOf(entry1.created).compareTo(Timestamp.valueOf(entry2.created))})
-                val pages = Iterables.partition(sorted, pageSize).toList()
+                val sorted = friendList
+                        .map { friend -> Entry(
+                                PlayerResolver.resolveUuidToName(friend.friend).orElse(":("),
+                                friendsClient!!.zBridge.getRankColor(friend.friend))
+                        }
+                        .sortedWith(kotlin.Comparator { obj1, obj2 -> compareFriends(obj1, obj2)  })
     
+                val pages = Iterables.partition(sorted, pageSize).toList()
+                
                 if (page > pages.size || page <= 0) {
                     friendsClient!!.messenger.message("§cSeitenzahl zu groß oder zu klein.", sender)
                     return
@@ -69,17 +76,8 @@ class FriendListCommand : BungeeCommand {
                 
                 // PlayerResolver methods are blocking the main thread
                 friendsClient!!.runAsync {
+                        list(page, pages, sender, true)
                     
-                        val converted = pages
-                                .map { friendPage -> friendPage
-                                        .map { friend -> Entry(
-                                                PlayerResolver.resolveUuidToName(friend.friend).orElse(":("),
-                                                friendsClient!!.zBridge.getRankColor(friend.friend))
-                                        }
-                                }
-                        list(page, converted, sender, true)
-                    
-    
                     sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${(Math.ceil(friendList.size.toDouble() / pageSize)).toInt()}] §6§m-----------"))
                 }
             }

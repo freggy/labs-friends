@@ -23,8 +23,8 @@ class FriendRemoveCommand : BungeeCommand {
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         val name = args!![0]
         if (sender is ProxiedPlayer) {
-            
             // PlayerResolver#resolveNameToUuid blocks
+            if (name.equals(sender.name, true)) return
             friendsClient!!.runAsync {
                 PlayerResolver.resolveNameToUuid(name).ifPresent {
                     if (FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList.any { entry -> entry.friend == it }) {

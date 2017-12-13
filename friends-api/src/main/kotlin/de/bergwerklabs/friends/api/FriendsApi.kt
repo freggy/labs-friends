@@ -88,17 +88,32 @@ class FriendsApi {
         
         @JvmStatic
         fun getPendingRequests(player: UUID): Set<RequestEntry> {
-            val packet = service.sendRequestWithFuture(CacheLoadAndGetPacket<UUID>(player.toString(), AtlantisCache.PENDING_FRIEND_REQUESTS_CACHE), CachePacket::class.java)
-                    .get(4, TimeUnit.SECONDS)
-            return (packet.cacheObject as HashSet<RequestEntry>).filter { entry -> !entry.removeEntry() }.toSet()
+            var set = setOf<RequestEntry>()
+            val future = service.sendRequestWithFuture(CacheLoadAndGetPacket<UUID>(player.toString(), AtlantisCache.PENDING_FRIEND_REQUESTS_CACHE), CachePacket::class.java)
+            
+            try {
+                val packet = future.get(4, TimeUnit.SECONDS)
+                set = (packet.cacheObject as HashSet<RequestEntry>).filter { entry -> !entry.removeEntry() }.toSet()
+            }
+            catch (ex: Exception) {
+                future.cancel(true)
+            }
+            return set
         }
     
         @JvmStatic
         fun getFriendlist(player: UUID): Set<FriendEntry> {
-            val packet = service.sendRequestWithFuture(CacheLoadAndGetPacket<UUID>(player.toString(), AtlantisCache.FRIEND_LIST_CACHE), CachePacket::class.java)
-                    .get(4, TimeUnit.SECONDS)
+            var set = setOf<FriendEntry>()
+            val future = service.sendRequestWithFuture(CacheLoadAndGetPacket<UUID>(player.toString(), AtlantisCache.FRIEND_LIST_CACHE), CachePacket::class.java)
             
-            return (packet.cacheObject as HashSet<FriendEntry>).filter { entry -> !entry.removeEntry() }.toSet()
+            try {
+                val packet = future.get(4, TimeUnit.SECONDS)
+                set = (packet.cacheObject as HashSet<FriendEntry>).filter { entry -> !entry.removeEntry() }.toSet()
+            }
+            catch (ex: Exception) {
+                future.cancel(true)
+            }
+            return set
         }
         
         @JvmStatic

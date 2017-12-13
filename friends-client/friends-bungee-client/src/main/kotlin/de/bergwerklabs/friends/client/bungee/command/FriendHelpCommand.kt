@@ -1,5 +1,7 @@
 package de.bergwerklabs.friends.client.bungee.command
 
+import de.bergwerklabs.atlantis.client.base.util.AtlantisPackageService
+import de.bergwerklabs.atlantis.columbia.packages.bungee.UpdateBungeeFaviconPacket
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.friends.client.bungee.friendsClient
 import net.md_5.bungee.api.CommandSender

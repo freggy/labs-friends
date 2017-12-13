@@ -53,6 +53,8 @@ class FriendListInvitesCommand : BungeeCommand {
             
                 sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Anfragen §6§m-------"))
                 
+                // TODO: do like in /friend list command
+                
                 // Run async because PlayerResolver methods are blocking the main thread
                 friendsClient!!.proxy.scheduler.runAsync(friendsClient!!, {
                     try {

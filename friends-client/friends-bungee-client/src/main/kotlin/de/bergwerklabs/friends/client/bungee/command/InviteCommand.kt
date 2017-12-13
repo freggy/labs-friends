@@ -14,7 +14,7 @@ import net.md_5.bungee.api.connection.ProxiedPlayer
  */
 class InviteCommand : BungeeCommand {
     
-    override fun getName() = "invite"
+    override fun getName() = "add"
     
     override fun getDescription() = "Schickt einem Spieler eine Freundschaftsanfrage."
     
@@ -23,6 +23,7 @@ class InviteCommand : BungeeCommand {
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
             val label = args!![0]
+            if (label.equals(sender.name, true)) return
             
             // PlayerResolver#resolveNameToUuid blocks
             friendsClient!!.runAsync {
