@@ -43,11 +43,13 @@ class FriendsBungeeClient : Plugin(), Listener {
     override fun onEnable() {
         friendsClient = this
         
+        val helpCommand = FriendHelpCommand()
+        
         val parent = FriendParentCommand(
                 "friend",
                 "",
                 "",
-                null,
+                helpCommand,
                 FriendListCommand(),
                 InviteCommand(),
                 FriendDenyCommand(),
@@ -55,7 +57,7 @@ class FriendsBungeeClient : Plugin(), Listener {
                 FriendRemoveCommand(),
                 FriendListInvitesCommand(),
                 FriendJumpToCommand(),
-                FriendHelpCommand())
+                helpCommand)
         
         this.proxy.pluginManager.registerCommand(this, parent)
         this.helpDisplay = CommandHelpDisplay(parent.subCommands.toSet())

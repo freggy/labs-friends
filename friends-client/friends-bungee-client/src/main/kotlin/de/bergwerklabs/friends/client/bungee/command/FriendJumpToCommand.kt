@@ -41,11 +41,10 @@ class FriendJumpToCommand : BungeeCommand {
                 
                 val optional = PlayerResolver.getOnlinePlayerCacheEntry(to)
                 if (optional.isPresent) {
-                    val info = optional.get().currentServer
-                    println(info.containerId)
-                    println(info.service)
-                    println("${info.containerId}_${info.service}")
-                    sender.connect(friendsClient!!.proxy.getServerInfo("${info.containerId}_${info.service}"))
+                    val info = optional.get().currentServer ?: return@runAsync
+                    friendsClient!!.proxy.getServerInfo("${info.containerId}_${info.service}")?.let {
+                        sender.connect(it)
+                    }
                 }
                 else friendsClient!!.messenger.message("§cDieser Spieler ist zur Zeit nicht online.", sender)
             }
