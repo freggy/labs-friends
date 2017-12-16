@@ -1,7 +1,7 @@
 package de.bergwerklabs.friends.client.bungee.common
 
 import de.bergwerklabs.api.cache.pojo.players.online.OnlinePlayerCacheEntry
-import de.bergwerklabs.atlantis.client.base.PlayerResolver
+import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
 import net.md_5.bungee.api.ChatColor
 import java.util.*
 
@@ -12,10 +12,5 @@ import java.util.*
  */
 data class Entry(val name: String, val rankColor: ChatColor) {
     
-    val onlineInfo: Optional<OnlinePlayerCacheEntry>
-    
-    init {
-        onlineInfo = PlayerResolver.getOnlinePlayerCacheEntry(name)
-    }
-    
+    val onlineInfo: Optional<OnlinePlayerCacheEntry> = PlayerResolver.getOnlinePlayerCacheEntry(name)
 }

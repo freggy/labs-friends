@@ -3,7 +3,7 @@ package de.bergwerklabs.friends.client.bungee
 import de.bergwerklabs.api.cache.pojo.friends.FriendEntry
 import de.bergwerklabs.atlantis.api.friends.FriendLoginPacket
 import de.bergwerklabs.atlantis.api.friends.FriendLogoutPacket
-import de.bergwerklabs.atlantis.client.base.PlayerResolver
+import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
 import de.bergwerklabs.atlantis.client.base.util.AtlantisPackageService
 import de.bergwerklabs.framework.commons.bungee.chat.PluginMessenger
 import de.bergwerklabs.framework.commons.bungee.command.help.CommandHelpDisplay
@@ -13,7 +13,6 @@ import de.bergwerklabs.friends.client.bungee.command.*
 import de.bergwerklabs.friends.client.bungee.common.getLoginMessage
 import de.bergwerklabs.friends.client.bungee.common.getLogoutMessage
 import de.bergwerklabs.friends.client.bungee.common.sendMessageToFriends
-import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.connection.ProxiedPlayer
 import net.md_5.bungee.api.event.PlayerDisconnectEvent
@@ -67,16 +66,20 @@ class FriendsBungeeClient : Plugin(), Listener {
         FriendsApi.registerInviteListener(FriendRequestListener())
         
         this.service.addListener(FriendLoginPacket::class.java, { packet ->
-            val receiver = this.proxy.getPlayer(packet.messageReceiver)
-            receiver?.let {
-                friendsClient!!.messenger.message(TextComponent.toLegacyText(*getLoginMessage(packet.onlinePlayer.name, this.zBridge.getRankColor(packet.onlinePlayer.uuid))), receiver)
+            this.runAsync {
+                val receiver = this.proxy.getPlayer(packet.messageReceiver)
+                receiver?.let {
+                    receiver.sendMessage(net.md_5.bungee.api.ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6>> §eFriends §6❘"), *getLoginMessage(packet.onlinePlayer.name, this.zBridge.getRankColor(packet.onlinePlayer.uuid)))
+                }
             }
         })
         
         this.service.addListener(FriendLogoutPacket::class.java, { packet ->
-            val receiver = this.proxy.getPlayer(packet.messageReceiver)
-            receiver?.let {
-                friendsClient!!.messenger.message(TextComponent.toLegacyText(*getLogoutMessage(packet.onlinePlayer.name, this.zBridge.getRankColor(packet.onlinePlayer.uuid))), receiver)
+            this.runAsync {
+                val receiver = this.proxy.getPlayer(packet.messageReceiver)
+                receiver?.let {
+                    friendsClient!!.messenger.message(TextComponent.toLegacyText(*getLogoutMessage(packet.onlinePlayer.name, this.zBridge.getRankColor(packet.onlinePlayer.uuid))), receiver)
+                }
             }
         })
     }
@@ -119,7 +122,6 @@ class FriendsBungeeClient : Plugin(), Listener {
     
     internal fun process(name: String, sender: ProxiedPlayer, friendList: Set<FriendEntry>, func: (UUID, UUID) -> Unit) {
         val playerOnServer = this.proxy.getPlayer(name)
-        // TODO: refactor
         
         // if the player is on the server we don't have to resolve the name to a UUID.
         if (playerOnServer != null) {

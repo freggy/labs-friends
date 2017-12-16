@@ -114,12 +114,7 @@ private fun pendingComps(friendName: String, friendRankColor: ChatColor): Compon
 }
 
 internal fun getLoginMessage(name: String, color: ChatColor): Array<BaseComponent> {
-    return getLoginOrOutMessage(name, color, "online", ChatColor.GREEN)
-            .append(" [").color(ChatColor.GRAY)
-            .append("EINLADEN").color(ChatColor.GOLD)
-            .event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/party invite $name"))
-            .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("$name zu einer party einladen.")))
-            .append("]").color(ChatColor.GRAY).create()
+    return getLoginOrOutMessage(name, color, "online", ChatColor.GREEN).create()
 }
 
 internal fun getLogoutMessage(name: String, color: ChatColor): Array<BaseComponent> {

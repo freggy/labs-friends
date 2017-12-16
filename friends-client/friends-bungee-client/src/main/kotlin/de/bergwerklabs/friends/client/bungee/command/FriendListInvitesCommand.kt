@@ -1,7 +1,7 @@
 package de.bergwerklabs.friends.client.bungee.command
 
 import com.google.common.collect.Iterables
-import de.bergwerklabs.atlantis.client.base.PlayerResolver
+import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.common.Entry
@@ -52,8 +52,6 @@ class FriendListInvitesCommand : BungeeCommand {
                 }
             
                 sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Anfragen §6§m-------"))
-                
-                // TODO: do like in /friend list command
                 
                 // Run async because PlayerResolver methods are blocking the main thread
                 friendsClient!!.proxy.scheduler.runAsync(friendsClient!!, {

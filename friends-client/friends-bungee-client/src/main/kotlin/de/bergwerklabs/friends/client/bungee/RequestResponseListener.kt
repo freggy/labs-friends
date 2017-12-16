@@ -1,7 +1,7 @@
 package de.bergwerklabs.friends.client.bungee
 
 import de.bergwerklabs.atlantis.api.friends.FriendRequestResponse
-import de.bergwerklabs.atlantis.client.base.PlayerResolver
+import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
 import de.bergwerklabs.friends.api.FriendRequestResponseListener
 import java.util.*
 

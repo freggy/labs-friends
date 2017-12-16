@@ -1,6 +1,6 @@
 package de.bergwerklabs.friends.client.bungee.command
 
-import de.bergwerklabs.atlantis.client.base.PlayerResolver
+import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.friendsClient
@@ -33,7 +33,7 @@ class InviteCommand : BungeeCommand {
                     val receiver = optional.get()
                     friendsClient!!.requests[sender.uniqueId]!!.add(receiver)
                     FriendsApi.sendInvite(sender.uniqueId, receiver)
-                    friendsClient!!.messenger.message("§7Deiner Anfrage wurde versendet.", sender)
+                    friendsClient!!.messenger.message("§7Deine Anfrage wurde versendet.", sender)
                 }
                 else friendsClient!!.messenger.message("§cDieser Spieler ist uns nicht bekannt :(", sender)
             }

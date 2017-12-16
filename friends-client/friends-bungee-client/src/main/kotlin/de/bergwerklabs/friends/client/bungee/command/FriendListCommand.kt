@@ -1,25 +1,17 @@
 package de.bergwerklabs.friends.client.bungee.command
 
 import com.google.common.collect.Iterables
-import com.google.common.collect.Ordering
-import de.bergwerklabs.api.cache.pojo.friends.FriendEntry
-import de.bergwerklabs.api.cache.pojo.players.online.OnlinePlayerCacheEntry
-import de.bergwerklabs.atlantis.client.base.PlayerResolver
+import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.common.Entry
 import de.bergwerklabs.friends.client.bungee.common.compareFriends
 import de.bergwerklabs.friends.client.bungee.common.list
 import de.bergwerklabs.friends.client.bungee.friendsClient
-import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.CommandSender
-import net.md_5.bungee.api.chat.ClickEvent
-import net.md_5.bungee.api.chat.ComponentBuilder
-import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.connection.ProxiedPlayer
-import java.sql.Timestamp
 import java.util.*
 
 /**
@@ -29,7 +21,7 @@ import java.util.*
  */
 class FriendListCommand : BungeeCommand {
     
-    private val pageSize = 10
+    private val pageSize = 8
     
     override fun getName() = "list"
     
@@ -57,29 +49,26 @@ class FriendListCommand : BungeeCommand {
                     }
                     page = args[0].toInt()
                 }
-                
-                val sorted = friendList
-                        .map { friend -> Entry(
-                                PlayerResolver.resolveUuidToName(friend.friend).orElse(":("),
-                                friendsClient!!.zBridge.getRankColor(friend.friend))
-                        }
-                        .sortedWith(kotlin.Comparator { obj1, obj2 -> compareFriends(obj1, obj2)  })
-    
-                val pages = Iterables.partition(sorted, pageSize).toList()
-                
-                if (page > pages.size || page <= 0) {
-                    friendsClient!!.messenger.message("§cSeitenzahl zu groß oder zu klein.", sender)
-                    return
-                }
-                
-                sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Freundesliste §6§m-------"))
-                
                 // PlayerResolver methods are blocking the main thread
                 friendsClient!!.runAsync {
-                        list(page, pages, sender, true)
+                    val sorted = friendList
+                            .map { friend -> Entry(
+                                    PlayerResolver.resolveUuidToName(friend.friend).orElse(":("),
+                                    friendsClient!!.zBridge.getRankColor(friend.friend))
+                            }
+                            .sortedWith(kotlin.Comparator { obj1, obj2 -> compareFriends(obj1, obj2)  })
+        
+                    val pages = Iterables.partition(sorted, pageSize).toList()
                     
-                    sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${(Math.ceil(friendList.size.toDouble() / pageSize)).toInt()}] §6§m-----------"))
-                }
+                    if (page > pages.size || page <= 0) {
+                        friendsClient!!.messenger.message("§cSeitenzahl zu groß oder zu klein.", sender)
+                        return@runAsync
+                    }
+                    
+                        sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Freundesliste §6§m-------"))
+                        list(page, pages, sender, true)
+                        sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${(Math.ceil(friendList.size.toDouble() / pageSize)).toInt()}] §6§m-----------"))
+                    }
             }
             else {
                 friendsClient!!.messenger.message("§c${funnySentences[Random().nextInt(funnySentences.size)]}", sender)
