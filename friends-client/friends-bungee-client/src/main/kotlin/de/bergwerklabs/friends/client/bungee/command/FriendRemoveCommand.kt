@@ -29,7 +29,7 @@ class FriendRemoveCommand : BungeeCommand {
                 PlayerResolver.resolveNameToUuid(name).ifPresent {
                     if (FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList.any { entry -> entry.friend == it }) {
                         FriendsApi.removeFriend(sender.uniqueId, it)
-                        friendsClient!!.messenger.message("${friendsClient!!.zBridge.getRankColor(it)}$name§r wurde aus deiner Freundesliste entfernt.", sender)
+                        friendsClient!!.messenger.message("${friendsClient!!.zBridge.getRankColor(it)}$name§7 wurde aus deiner Freundesliste entfernt.", sender)
                     }
                     else friendsClient!!.messenger.message("§cDieser Spieler ist nicht mit dir befreundet.", sender)
                 }

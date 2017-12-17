@@ -30,9 +30,9 @@ class FriendAcceptCommand : BungeeCommand {
                     return@runAsync
                 }
                 
-                friendsClient!!.process(name, sender, { acceptor, accepted ->
+                friendsClient!!.process(args[0], sender, { acceptor, accepted ->
                     FriendsApi.respondToInvite(acceptor, accepted, FriendRequestResponse.ACCEPTED)
-                    friendsClient!!.messenger.message("§bDu hast die Anfrage §aangenommen", sender)
+                    friendsClient!!.messenger.message("§7Du hast die Anfrage §aangenommen", sender)
                 })
             }
         }

@@ -9,6 +9,7 @@ import de.bergwerklabs.framework.commons.bungee.command.help.CommandHelpDisplay
 import de.bergwerklabs.framework.commons.bungee.permissions.ZBridge
 import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.command.*
+import de.bergwerklabs.friends.client.bungee.common.PlayerSettingsWrapper
 import de.bergwerklabs.friends.client.bungee.common.getLoginMessage
 import de.bergwerklabs.friends.client.bungee.common.getLogoutMessage
 import de.bergwerklabs.friends.client.bungee.common.sendMessageToFriends
@@ -20,8 +21,6 @@ import net.md_5.bungee.api.plugin.Listener
 import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.event.EventHandler
 import java.util.*
-import kotlin.collections.HashMap
-import kotlin.collections.HashSet
 
 internal var friendsClient: FriendsBungeeClient? = null
 
@@ -34,7 +33,7 @@ class FriendsBungeeClient : Plugin(), Listener {
     
     val messenger = PluginMessenger("Friends")
     val zBridge = ZBridge()
-    val requests = HashMap<UUID, MutableSet<UUID>>()
+    val settings = PlayerSettingsWrapper()
     lateinit var helpDisplay: CommandHelpDisplay
     private val service = AtlantisPackageService(FriendLoginPacket::class.java)
     
@@ -88,7 +87,6 @@ class FriendsBungeeClient : Plugin(), Listener {
         this.runAsync {
             val player = event.player
             val info = FriendsApi.retrieveFriendInfo(player.uniqueId)
-            requests.putIfAbsent(player.uniqueId, HashSet())
             sendMessageToFriends(info.friendList, this.service, this.proxy, player, true)
     
             if (info.pendingInvites.isNotEmpty())  {
@@ -110,7 +108,6 @@ class FriendsBungeeClient : Plugin(), Listener {
     @EventHandler
     fun onPlayerDisconnect(event: PlayerDisconnectEvent) {
         val player = event.player
-        requests.remove(player.uniqueId)
         
         /*
         // TODO: fix
@@ -120,7 +117,6 @@ class FriendsBungeeClient : Plugin(), Listener {
     }
     
     internal fun process(name: String, sender: ProxiedPlayer, func: (UUID, UUID) -> Unit) {
-        val playerOnServer = this.proxy.getPlayer(name)
         val uuidOptional = PlayerResolver.resolveNameToUuid(name)
     
         if (!uuidOptional.isPresent) {
@@ -136,18 +132,12 @@ class FriendsBungeeClient : Plugin(), Listener {
             return
         }
     
-        val friendList = FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList
+        val friendList = FriendsApi.getFriendlist(sender.uniqueId)
         
         if (friendList.any { entry -> entry.friend == uuid }) {
             friendsClient!!.messenger.message("§cDieser Spieler ist bereits in deiner Freundesliste", sender)
             return
         }
-        else if (!this.requests[playerOnServer.uniqueId]!!.contains(sender.uniqueId)) {
-            friendsClient!!.messenger.message("§cDieser Spieler hat dir keine Anfrage gesendet.", sender)
-            return
-        }
-        
-        this.requests[playerOnServer.uniqueId]!!.remove(sender.uniqueId)
-        func.invoke(sender.uniqueId, playerOnServer.uniqueId)
+        func.invoke(sender.uniqueId, uuid)
     }
 }

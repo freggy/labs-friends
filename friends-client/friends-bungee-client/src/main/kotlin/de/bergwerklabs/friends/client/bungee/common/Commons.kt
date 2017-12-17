@@ -7,7 +7,6 @@ import de.bergwerklabs.atlantis.api.friends.FriendLoginPacket
 import de.bergwerklabs.atlantis.api.friends.FriendLogoutPacket
 import de.bergwerklabs.atlantis.client.base.util.AtlantisPackageService
 import de.bergwerklabs.framework.commons.misc.FancyNameGenerator
-import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.friendsClient
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.ChatMessageType
@@ -28,19 +27,21 @@ internal fun sendMessageToFriends(friendList: Set<FriendEntry>,
     else getLogoutMessage(player.name, friendsClient!!.zBridge.getRankColor(player.uniqueId))
     
     friendList.forEach { entry ->
-        val playerOnServer = proxy.getPlayer(entry.friend)
-    
-        if (playerOnServer != null) {
-            friendsClient!!.messenger.message(TextComponent.toLegacyText(*message), playerOnServer)
-        }
-        else {
-            
-            val packet = if (onLogin) {
-                FriendLoginPacket(PlayerNameToUuidMapping(player.name, player.uniqueId), entry.friend)
+        if (friendsClient!!.settings.isOnlineStatusEnabled(entry.friend)) {
+            val playerOnServer = proxy.getPlayer(entry.friend)
+        
+            if (playerOnServer != null) {
+                friendsClient!!.messenger.message(TextComponent.toLegacyText(*message), playerOnServer)
             }
-            else FriendLogoutPacket(PlayerNameToUuidMapping(player.name, player.uniqueId), entry.friend)
+            else {
             
-            service.sendPackage(packet)
+                val packet = if (onLogin) {
+                    FriendLoginPacket(PlayerNameToUuidMapping(player.name, player.uniqueId), entry.friend)
+                }
+                else FriendLogoutPacket(PlayerNameToUuidMapping(player.name, player.uniqueId), entry.friend)
+            
+                service.sendPackage(packet)
+            }
         }
     }
 }
