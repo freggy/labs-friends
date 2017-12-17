@@ -1,6 +1,5 @@
 package de.bergwerklabs.friends.client.bungee
 
-import de.bergwerklabs.api.cache.pojo.friends.FriendEntry
 import de.bergwerklabs.atlantis.api.friends.FriendLoginPacket
 import de.bergwerklabs.atlantis.api.friends.FriendLogoutPacket
 import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
@@ -120,33 +119,35 @@ class FriendsBungeeClient : Plugin(), Listener {
         } */
     }
     
-    internal fun process(name: String, sender: ProxiedPlayer, friendList: Set<FriendEntry>, func: (UUID, UUID) -> Unit) {
+    internal fun process(name: String, sender: ProxiedPlayer, func: (UUID, UUID) -> Unit) {
         val playerOnServer = this.proxy.getPlayer(name)
+        val uuidOptional = PlayerResolver.resolveNameToUuid(name)
+    
+        if (!uuidOptional.isPresent) {
+            friendsClient!!.messenger.message("§cEin schwerwiegender Fehler ist aufgetreten.", sender)
+            return
+        }
         
-        // if the player is on the server we don't have to resolve the name to a UUID.
-        if (playerOnServer != null) {
-            if (friendList.any { entry -> entry.friend == playerOnServer.uniqueId }) {
-                friendsClient!!.messenger.message("§cDieser Spieler ist bereits in deiner Freundesliste", sender)
-                return
-            }
-            else if (!this.requests[playerOnServer.uniqueId]!!.contains(sender.uniqueId)) {
-                friendsClient!!.messenger.message("§cDieser Spieler hat dir keine Anfrage gesendet.", sender)
-                return
-            }
-            this.requests[playerOnServer.uniqueId]!!.remove(sender.uniqueId)
-            func.invoke(sender.uniqueId, playerOnServer.uniqueId)
+        val uuid = uuidOptional.get()
+        val hasRequested = FriendsApi.getPendingRequests(sender.uniqueId).any { entry -> entry.requester == uuid }
+    
+        if (!hasRequested) {
+            friendsClient!!.messenger.message("§cDieser Spieler hat dir keine anfrage gesendet.", sender)
+            return
         }
-        else {
-            val optional = PlayerResolver.resolveNameToUuid(name)
-            if (optional.isPresent) {
-                val uuid = optional.get()
-                if (friendList.any { entry -> entry.friend == uuid }) {
-                    friendsClient!!.messenger.message("§cDieser Spieler ist bereits in deiner Freundesliste", sender)
-                    return
-                }
-                func.invoke(sender.uniqueId, uuid)
-            }
-            else friendsClient!!.messenger.message("§cDieser Spieler ist uns nicht bekannt.", sender)
+    
+        val friendList = FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList
+        
+        if (friendList.any { entry -> entry.friend == uuid }) {
+            friendsClient!!.messenger.message("§cDieser Spieler ist bereits in deiner Freundesliste", sender)
+            return
         }
+        else if (!this.requests[playerOnServer.uniqueId]!!.contains(sender.uniqueId)) {
+            friendsClient!!.messenger.message("§cDieser Spieler hat dir keine Anfrage gesendet.", sender)
+            return
+        }
+        
+        this.requests[playerOnServer.uniqueId]!!.remove(sender.uniqueId)
+        func.invoke(sender.uniqueId, playerOnServer.uniqueId)
     }
 }

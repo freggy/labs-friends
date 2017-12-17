@@ -7,6 +7,7 @@ import de.bergwerklabs.atlantis.api.friends.FriendLoginPacket
 import de.bergwerklabs.atlantis.api.friends.FriendLogoutPacket
 import de.bergwerklabs.atlantis.client.base.util.AtlantisPackageService
 import de.bergwerklabs.framework.commons.misc.FancyNameGenerator
+import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.friendsClient
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.ChatMessageType
@@ -66,6 +67,7 @@ internal fun compareFriends(entry1: Entry, entry2: Entry): Int {
     if (result == 0) return Integer.compare(entry1.rankColor.ordinal, entry2.rankColor.ordinal)
     return result
 }
+
 
 private fun displayInfo(player:          ProxiedPlayer,
                         onlineInfo:      Optional<OnlinePlayerCacheEntry>,

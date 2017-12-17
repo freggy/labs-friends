@@ -22,17 +22,15 @@ class FriendAcceptCommand : BungeeCommand {
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
-            
-            // Run async because FriendsApi#retrieveFriendInfo is blocking
+            // Run async because friendsClient#process is blocking
             friendsClient!!.runAsync {
-                val friendList = FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList
-    
+                
                 if (args!!.isEmpty()) {
                     friendsClient!!.messenger.message("§cEin Fehler ist aufgetreten.", sender)
                     return@runAsync
                 }
-    
-                friendsClient!!.process(args[0], sender, friendList, { acceptor, accepted ->
+                
+                friendsClient!!.process(name, sender, { acceptor, accepted ->
                     FriendsApi.respondToInvite(acceptor, accepted, FriendRequestResponse.ACCEPTED)
                     friendsClient!!.messenger.message("§bDu hast die Anfrage §aangenommen", sender)
                 })
