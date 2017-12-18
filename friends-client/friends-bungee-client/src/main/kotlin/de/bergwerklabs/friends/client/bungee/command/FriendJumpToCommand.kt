@@ -22,12 +22,12 @@ class FriendJumpToCommand : BungeeCommand {
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
-            val to = args!![0]
-            
-            if (args.isEmpty()) {
+            if (args!!.isEmpty()) {
                 friendsClient!!.messenger.message("§cDu musst einen Namen angeben.", sender)
                 return
             }
+            
+            val to = args[0]
             
             // PlayerResolver#getOnlinePlayerCacheEntry is blocking
             friendsClient!!.runAsync {

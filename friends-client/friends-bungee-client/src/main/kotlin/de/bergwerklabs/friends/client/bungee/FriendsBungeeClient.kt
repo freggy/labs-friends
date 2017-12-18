@@ -1,5 +1,7 @@
 package de.bergwerklabs.friends.client.bungee
 
+import de.bergwerklabs.atlantis.api.corepackages.AtlantisCache
+import de.bergwerklabs.atlantis.api.corepackages.cache.CacheUnloadPacket
 import de.bergwerklabs.atlantis.api.friends.FriendLoginPacket
 import de.bergwerklabs.atlantis.api.friends.FriendLogoutPacket
 import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
@@ -88,13 +90,16 @@ class FriendsBungeeClient : Plugin(), Listener {
             val player = event.player
             val info = FriendsApi.retrieveFriendInfo(player.uniqueId)
             sendMessageToFriends(info.friendList, this.service, this.proxy, player, true)
-    
-            if (info.pendingInvites.isNotEmpty())  {
+            
+            if (info.pendingInvites.isNotEmpty()) {
                 if (info.pendingInvites.size == 1)
                     friendsClient!!.messenger.message("Du hast §beine §7ausstehende Anfrage.", player)
                 else
                     friendsClient!!.messenger.message("Du hast §b${info.pendingInvites.size} §7ausstehende Anfragen.", player)
             }
+            
+            this.service.sendPackage(CacheUnloadPacket<UUID>(player.uniqueId.toString(), AtlantisCache.FRIEND_LIST_CACHE))
+            this.service.sendPackage(CacheUnloadPacket<UUID>(player.uniqueId.toString(), AtlantisCache.PENDING_FRIEND_REQUESTS_CACHE))
         }
     }
     
