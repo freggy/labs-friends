@@ -11,6 +11,7 @@
     <modules>
         <module>friends-api</module>
         <module>friends-client</module>
+        <module>friends-server</module>
     </modules>
 
     <distributionManagement>
