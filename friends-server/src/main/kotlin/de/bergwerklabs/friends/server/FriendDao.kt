@@ -18,15 +18,15 @@ class FriendDao(private val database: Database) {
 
     private val executor = Executors.newFixedThreadPool(10)
 
-    private val DELETE_FRIENDSHIP_QUERY = "DELETE FROM netsyn.friendships WHERE uuid1 = ? OR uuid2 = ?"
-    private val GET_FRIENDSHIPS_QUERY = "SELECT * FROM netsyn.friendships WHERE uuid2 = ? OR uuid1 = ?"
-    private val CREATE_FRIENDSHIP_QUERY = "INSERT INTO netsyn.friendships (uuid1, uuid2, created) VALUES (?, ?, ?)"
+    private val DELETE_FRIENDSHIP_QUERY = "DELETE FROM friendships WHERE uuid1 = ? OR uuid2 = ?"
+    private val GET_FRIENDSHIPS_QUERY = "SELECT * FROM friendships WHERE uuid2 = ? OR uuid1 = ?"
+    private val CREATE_FRIENDSHIP_QUERY = "INSERT INTO friendships (uuid1, uuid2, created) VALUES (?, ?, ?)"
 
-    private val DELETE_PENDING_INVITES_QUERY = "DELETE FROM netsyn.friend_requests WHERE acceptor = ? AND requester ?"
-    private val GET_PENDING_INVITES_QUERY = "SELECT requester FROM netsyn.friend_requests WHERE acceptor = ?"
-    private val CREATE_PENDING_INVITES_QUERY = "INSERT INTO netsyn.friend_requests (requester, acceptor, created) VALUES (?, ?, ?)"
+    private val DELETE_PENDING_INVITES_QUERY = "DELETE FROM friend_requests WHERE acceptor = ? AND requester ?"
+    private val GET_PENDING_INVITES_QUERY = "SELECT requester FROM friend_requests WHERE acceptor = ?"
+    private val CREATE_PENDING_INVITES_QUERY = "INSERT INTO friend_requests (requester, acceptor, created) VALUES (?, ?, ?)"
 
-    private val GET_SENT_INVITES_QUERY = "SELECT acceptor FROM netsyn.friend_requests WHERE requester = ?"
+    private val GET_SENT_INVITES_QUERY = "SELECT acceptor FROM friend_requests WHERE requester = ?"
 
     /**
      * Gets the friend list of asynchronously from the database.
@@ -35,27 +35,24 @@ class FriendDao(private val database: Database) {
      * @return [CompletableFuture] containing the result.
      */
     fun retrieveFriendsAsync(uuid: UUID): CompletableFuture<MutableSet<FriendEntry>> {
-        val friends = hashSetOf<FriendEntry>()
-        val future = CompletableFuture<MutableSet<FriendEntry>>()
-
-        this.executor.submit {
+        return this.executeAsync({ params ->
+            val friends = hashSetOf<FriendEntry>()
             val statement = database.prepareStatement(GET_FRIENDSHIPS_QUERY)
-            val result = statement.execute(uuid.toString())
+            val result = statement.execute(*params)
             statement.close()
-
             result.rows.forEach { row ->
                 val uuid1 = UUID.fromString(row.getString("uuid1"))
                 val uuid2 = UUID.fromString(row.getString("uuid2"))
                 val created = row.getTimestamp("created").toString()
-
+            
                 // Since uuid1 or uuid2 can be the players UUID to this check.
                 if (uuid1 == uuid) {
                     friends.add(FriendEntry(created, uuid2, uuid1))
-                } else friends.add(FriendEntry(created, uuid1, uuid2))
+                }
+                else friends.add(FriendEntry(created, uuid1, uuid2))
             }
-            future.complete(friends)
-        }
-        return future
+            return@executeAsync friends
+        }, uuid.toString(), uuid.toString())
     }
 
     /**
@@ -109,11 +106,11 @@ class FriendDao(private val database: Database) {
      * @param requester [UUID] of the player who requested.
      */
     fun deletePendingRequestAsync(responder: UUID, requester: UUID) {
-        this.executor.submit {
+        this.executeAsync({params ->
             val statement = this.database.prepareStatement(DELETE_PENDING_INVITES_QUERY)
-            statement.execute(responder.toString(), requester.toString())
+            statement.execute(*params)
             statement.close()
-        }
+        }, responder.toString(), requester.toString())
     }
 
     /**
@@ -123,7 +120,7 @@ class FriendDao(private val database: Database) {
      */
     fun retrievePendingInvitesAsync(acceptor: UUID): CompletableFuture<MutableSet<RequestEntry>> {
         val future = CompletableFuture<MutableSet<RequestEntry>>()
-
+        
         this.executor.submit {
             future.complete(this.retrievePending(GET_PENDING_INVITES_QUERY, acceptor))
         }
@@ -135,7 +132,7 @@ class FriendDao(private val database: Database) {
      *
      * @param sender [UUID] of the player.
      */
-    fun retrieveRequestedInvitesAsync(sender: UUID): CompletableFuture<MutableSet<RequestEntry>> {
+    fun retrieveSentInvitesAsync(sender: UUID): CompletableFuture<MutableSet<RequestEntry>> {
         val future = CompletableFuture<MutableSet<RequestEntry>>()
 
         this.executor.submit {
@@ -168,5 +165,20 @@ class FriendDao(private val database: Database) {
             }
         }
         return set
+    }
+    
+    private fun <T> executeAsync(func: (params: Array<out String>) -> T, vararg params: String): CompletableFuture<T> {
+        val future = CompletableFuture<T>()
+        this.executor.submit {
+            // Catch exceptions because they will not be propagated through
+            // due to execution in a thread pool
+            try {
+                future.complete(func(params))
+            }
+            catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+        }
+        return future
     }
 }

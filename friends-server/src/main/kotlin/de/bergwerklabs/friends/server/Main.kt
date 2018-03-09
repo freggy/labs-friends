@@ -4,10 +4,13 @@ import com.google.gson.Gson
 import de.bergwerklabs.api.cache.pojo.friends.FriendEntry
 import de.bergwerklabs.api.cache.pojo.friends.RequestEntry
 import de.bergwerklabs.atlantis.api.friends.*
+import de.bergwerklabs.atlantis.api.friends.server.PlayerLoginPacket
+import de.bergwerklabs.atlantis.api.friends.server.PlayerLogoutPacket
 import de.bergwerklabs.framework.commons.database.tablebuilder.Database
 import de.bergwerklabs.framework.commons.database.tablebuilder.DatabaseType
 import java.io.FileReader
 import java.sql.Timestamp
+import java.util.*
 
 class Main {
 
@@ -16,7 +19,7 @@ class Main {
         @JvmStatic
         fun main(args: Array<String>) {
 
-            val config = Gson().fromJson(FileReader("/config.json"), Config::class.java)
+            val config = Gson().fromJson(FileReader("config.json"), Config::class.java)
 
             val dao = FriendDao(
                     Database(
@@ -29,7 +32,7 @@ class Main {
             )
 
             service.addListener(PlayerLoginPacket::class.java, { packet ->
-                val uuid = packet.player
+                val uuid = packet.uuid
 
                 dao.retrieveFriendsAsync(uuid).thenAccept { friends ->
                     uuidToFriends[uuid] = friends
@@ -39,15 +42,15 @@ class Main {
                     uuidToPending[uuid] = pending
                 }
 
-                dao.retrieveRequestedInvitesAsync(uuid).thenAccept { requested ->
+                dao.retrieveSentInvitesAsync(uuid).thenAccept { requested ->
                     uuidToRequested[uuid] = requested
                 }
             })
 
             service.addListener(PlayerLogoutPacket::class.java, { packet ->
-                uuidToFriends.remove(packet.player)
-                uuidToPending.remove(packet.player)
-                uuidToRequested.remove(packet.player)
+                uuidToFriends.remove(packet.uuid)
+                uuidToPending.remove(packet.uuid)
+                uuidToRequested.remove(packet.uuid)
             })
 
             service.addListener(FriendInviteRequestPacket::class.java, { packet ->
@@ -67,7 +70,6 @@ class Main {
                 val timestamp = Timestamp(System.currentTimeMillis())
 
                 uuidToRequested[sender]?.add(RequestEntry(timestamp.toString(), sender, receiver))
-                dao.createRequestedInviteAsync(sender, receiver, timestamp)
 
                 uuidToPending[receiver]?.add(RequestEntry(timestamp.toString(), sender, receiver))
                 dao.savePendingRequestAsync(packet.receiver.uuid, packet.sender.uuid, timestamp)
@@ -82,8 +84,6 @@ class Main {
                     uuidToPending[sender]?.removeIf { entry ->
                         entry.requester == receiver && entry.acceptor == sender
                     }
-
-                    dao.deleteRequestedInviteAsync(receiver, sender)
 
                     uuidToRequested[receiver]?.removeIf { entry ->
                         entry.requester == receiver && entry.acceptor == sender
