@@ -3,6 +3,7 @@ package de.bergwerklabs.friends.server
 import de.bergwerklabs.api.cache.pojo.friends.FriendEntry
 import de.bergwerklabs.api.cache.pojo.friends.RequestEntry
 import de.bergwerklabs.framework.commons.database.tablebuilder.Database
+import de.bergwerklabs.framework.commons.database.tablebuilder.statement.StatementResult
 import java.sql.Timestamp
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -35,11 +36,8 @@ class FriendDao(private val database: Database) {
      * @return [CompletableFuture] containing the result.
      */
     fun retrieveFriendsAsync(uuid: UUID): CompletableFuture<MutableSet<FriendEntry>> {
-        return this.executeAsync({ params ->
+        return this.executeAsync({ result ->
             val friends = hashSetOf<FriendEntry>()
-            val statement = database.prepareStatement(GET_FRIENDSHIPS_QUERY)
-            val result = statement.execute(*params)
-            statement.close()
             result.rows.forEach { row ->
                 val uuid1 = UUID.fromString(row.getString("uuid1"))
                 val uuid2 = UUID.fromString(row.getString("uuid2"))
@@ -52,7 +50,7 @@ class FriendDao(private val database: Database) {
                 else friends.add(FriendEntry(created, uuid1, uuid2))
             }
             return@executeAsync friends
-        }, uuid.toString(), uuid.toString())
+        }, GET_FRIENDSHIPS_QUERY, uuid.toString(), uuid.toString())
     }
 
     /**
@@ -106,11 +104,13 @@ class FriendDao(private val database: Database) {
      * @param requester [UUID] of the player who requested.
      */
     fun deletePendingRequestAsync(responder: UUID, requester: UUID) {
+        // TODO: use execute update
+        /*
         this.executeAsync({params ->
             val statement = this.database.prepareStatement(DELETE_PENDING_INVITES_QUERY)
             statement.execute(*params)
             statement.close()
-        }, responder.toString(), requester.toString())
+        }, responder.toString(), requester.toString()) */
     }
 
     /**
@@ -167,13 +167,18 @@ class FriendDao(private val database: Database) {
         return set
     }
     
-    private fun <T> executeAsync(func: (params: Array<out String>) -> T, vararg params: String): CompletableFuture<T> {
+    // TODO: implement executeUpdateAsync
+    
+    private fun <T> executeAsync(func: (result: StatementResult) -> T, query: String, vararg params: String): CompletableFuture<T> {
         val future = CompletableFuture<T>()
         this.executor.submit {
             // Catch exceptions because they will not be propagated through
             // due to execution in a thread pool
             try {
-                future.complete(func(params))
+                this.database.prepareStatement(query).use { statement ->
+                    val result = statement.execute(*params)
+                    future.complete(func(result))
+                }
             }
             catch (ex: Exception) {
                 ex.printStackTrace()

@@ -99,6 +99,13 @@ class Main {
                     uuidToFriends[receiver]?.add(FriendEntry(timestamp.toString(), sender, receiver))
                 }
             })
+            
+            println("hellooooo")
+            
+            dao.retrieveFriendsAsync(UUID.fromString("92de217b-8b2b-403b-86a5-fe26fa3a9b5f")).thenAccept { entry ->
+                entry.forEach { println(it.friend) }
+            }
+            
         }
     }
 }
