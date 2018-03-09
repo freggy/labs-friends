@@ -39,7 +39,7 @@ class Main {
                     uuidToPending[uuid] = pending
                 }
 
-                dao.retrieveRequestedPlayersAsync(uuid).thenAccept { requested ->
+                dao.retrieveRequestedInvitesAsync(uuid).thenAccept { requested ->
                     uuidToRequested[uuid] = requested
                 }
             })
@@ -47,6 +47,7 @@ class Main {
             service.addListener(PlayerLogoutPacket::class.java, { packet ->
                 uuidToFriends.remove(packet.player)
                 uuidToPending.remove(packet.player)
+                uuidToRequested.remove(packet.player)
             })
 
             service.addListener(FriendInviteRequestPacket::class.java, { packet ->
@@ -66,7 +67,7 @@ class Main {
                 val timestamp = Timestamp(System.currentTimeMillis())
 
                 uuidToRequested[sender]?.add(RequestEntry(timestamp.toString(), sender, receiver))
-                dao.createRequestedEntry(sender, receiver, timestamp)
+                dao.createRequestedInviteAsync(sender, receiver, timestamp)
 
                 uuidToPending[receiver]?.add(RequestEntry(timestamp.toString(), sender, receiver))
                 dao.savePendingRequestAsync(packet.receiver.uuid, packet.sender.uuid, timestamp)
@@ -81,16 +82,23 @@ class Main {
                     uuidToPending[sender]?.removeIf { entry ->
                         entry.requester == receiver && entry.acceptor == sender
                     }
+
+                    dao.deleteRequestedInviteAsync(receiver, sender)
+
+                    uuidToRequested[receiver]?.removeIf { entry ->
+                        entry.requester == receiver && entry.acceptor == sender
+                    }
                 }
                 else if (packet.requestResponse == FriendRequestResponse.ACCEPTED) {
                     val timestamp = Timestamp(System.currentTimeMillis())
+
                     dao.createFriendshipAsync(sender, receiver, timestamp)
                     dao.createFriendshipAsync(receiver, sender, timestamp)
+
                     uuidToFriends[sender]?.add(FriendEntry(timestamp.toString(), receiver, sender))
                     uuidToFriends[receiver]?.add(FriendEntry(timestamp.toString(), sender, receiver))
                 }
             })
-
         }
     }
 }
