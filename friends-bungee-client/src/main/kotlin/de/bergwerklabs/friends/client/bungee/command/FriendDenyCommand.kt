@@ -1,10 +1,14 @@
 package de.bergwerklabs.friends.client.bungee.command
 
+import de.bergwerklabs.api.cache.pojo.PlayerNameToUuidMapping
 import de.bergwerklabs.atlantis.api.friends.FriendRequestResponse
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.friends.api.FriendsApi
+import de.bergwerklabs.friends.client.bungee.common.prefix
 import de.bergwerklabs.friends.client.bungee.friendsClient
+import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.CommandSender
+import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.connection.ProxiedPlayer
 
 /**
@@ -22,19 +26,22 @@ class FriendDenyCommand : BungeeCommand {
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
-    
-            // Run async because friendsClient#process is blocking
-            friendsClient!!.runAsync {
-                if (args!!.isEmpty()) {
-                    friendsClient!!.messenger.message("§cEin Fehler ist aufgetreten.", sender)
-                    return@runAsync
-                }
-    
-                friendsClient!!.process(args[0], sender, { denier, denied ->
-                    FriendsApi.respondToInvite(denier, denied, FriendRequestResponse.DENIED)
-                    friendsClient!!.messenger.message("§7Du hast die Anfrage §cabgelehnt", sender)
-                })
+            
+            if (args!!.isEmpty()) {
+                friendsClient!!.messenger.message("§cEin Fehler ist aufgetreten.", sender)
+                return
             }
+            
+            FriendsApi.respondToInvite(
+                PlayerNameToUuidMapping(sender.name, sender.uniqueId),
+                PlayerNameToUuidMapping(args[0], null),
+                FriendRequestResponse.ACCEPTED
+            )
+            
+            sender.sendMessage(
+                ChatMessageType.CHAT,
+                *TextComponent.fromLegacyText("${prefix} Du hast die Freundschaftsanfrage §cabgelehnt.")
+            )
         }
     }
 }

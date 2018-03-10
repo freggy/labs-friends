@@ -4,8 +4,14 @@ import com.google.gson.Gson
 import de.bergwerklabs.api.cache.pojo.friends.FriendEntry
 import de.bergwerklabs.api.cache.pojo.friends.RequestEntry
 import de.bergwerklabs.atlantis.api.friends.*
+import de.bergwerklabs.atlantis.api.friends.invite.FriendInviteClientRequestPacket
+import de.bergwerklabs.atlantis.api.friends.invite.FriendInviteClientResponsePacket
+import de.bergwerklabs.atlantis.api.friends.invite.FriendInviteServerResponse
+import de.bergwerklabs.atlantis.api.friends.server.FriendlistRequestPacket
+import de.bergwerklabs.atlantis.api.friends.server.FriendlistResponsePacket
 import de.bergwerklabs.atlantis.api.friends.server.PlayerLoginPacket
 import de.bergwerklabs.atlantis.api.friends.server.PlayerLogoutPacket
+import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
 import de.bergwerklabs.framework.commons.database.tablebuilder.Database
 import de.bergwerklabs.framework.commons.database.tablebuilder.DatabaseType
 import java.io.FileReader
@@ -18,7 +24,6 @@ class Main {
 
         @JvmStatic
         fun main(args: Array<String>) {
-
             val config = Gson().fromJson(FileReader("config.json"), Config::class.java)
 
             val dao = FriendDao(
@@ -53,20 +58,22 @@ class Main {
                 uuidToRequested.remove(packet.uuid)
             })
 
-            service.addListener(FriendInviteRequestPacket::class.java, { packet ->
+            service.addListener(FriendInviteClientRequestPacket::class.java, { packet ->
                 val sender = packet.sender.uuid
                 val receiver = packet.receiver.uuid
 
                 if (uuidToFriends[sender]?.any { it.friend == receiver }!!) {
-                    service.sendResponse(FriendInviteResponsePacket(packet.sender, packet.receiver, FriendRequestResponse.ALREADY_FRIENDS), packet)
+                    service.sendResponse(FriendInviteServerResponse(packet.sender, packet.receiver, FriendRequestResponse.ALREADY_FRIENDS), packet)
                     return@addListener
                 }
 
                 if (uuidToRequested[sender]?.any { it.acceptor == receiver }!!) {
-                    service.sendResponse(FriendInviteResponsePacket(packet.sender, packet.receiver, FriendRequestResponse.ALREADY_REQUESTED), packet)
+                    service.sendResponse(FriendInviteServerResponse(packet.sender, packet.receiver, FriendRequestResponse.ALREADY_REQUESTED), packet)
                     return@addListener
                 }
 
+                // TODO: limit friend list
+                
                 val timestamp = Timestamp(System.currentTimeMillis())
 
                 uuidToRequested[sender]?.add(RequestEntry(timestamp.toString(), sender, receiver))
@@ -75,11 +82,11 @@ class Main {
                 dao.savePendingRequestAsync(packet.receiver.uuid, packet.sender.uuid, timestamp)
             })
 
-            service.addListener(FriendInviteResponsePacket::class.java, { packet ->
+            service.addListener(FriendInviteClientResponsePacket::class.java, { packet ->
                 val sender = packet.sender.uuid
                 val receiver = packet.receiver.uuid
 
-                if (packet.requestResponse == FriendRequestResponse.DENIED) {
+                if (packet.response == FriendRequestResponse.DENIED) {
                     dao.deletePendingRequestAsync(sender, receiver)
                     uuidToPending[sender]?.removeIf { entry ->
                         entry.requester == receiver && entry.acceptor == sender
@@ -89,7 +96,7 @@ class Main {
                         entry.requester == receiver && entry.acceptor == sender
                     }
                 }
-                else if (packet.requestResponse == FriendRequestResponse.ACCEPTED) {
+                else if (packet.response == FriendRequestResponse.ACCEPTED) {
                     val timestamp = Timestamp(System.currentTimeMillis())
 
                     dao.createFriendshipAsync(sender, receiver, timestamp)
@@ -97,15 +104,19 @@ class Main {
 
                     uuidToFriends[sender]?.add(FriendEntry(timestamp.toString(), receiver, sender))
                     uuidToFriends[receiver]?.add(FriendEntry(timestamp.toString(), sender, receiver))
+                    
+                    // Send SUCCESS back so the client knows the request has been successfully processed.
+                    service.sendResponse(FriendInviteServerResponse(packet.sender, packet.receiver, FriendRequestResponse.SUCCESS), packet)
+                    service.sendPackage(FriendInviteServerResponse(packet.sender, packet.receiver, packet.response))
                 }
             })
             
-            println("hellooooo")
-            
-            dao.retrieveFriendsAsync(UUID.fromString("92de217b-8b2b-403b-86a5-fe26fa3a9b5f")).thenAccept { entry ->
-                entry.forEach { println(it.friend) }
-            }
-            
+            service.addListener(FriendlistRequestPacket::class.java, { packet ->
+                val set = uuidToFriends[packet.uuid]?.map { friendEntry ->
+                    Friend(PlayerResolver.resolveUuidToName(friendEntry.friend), friendEntry.created)
+                }!!.toHashSet()
+                service.sendResponse(FriendlistResponsePacket(packet.uuid, set), packet)
+            })
         }
     }
 }

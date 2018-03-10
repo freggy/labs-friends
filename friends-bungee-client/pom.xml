@@ -7,18 +7,19 @@
         <groupId>de.bergwerklabs.friends</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
+
     <modelVersion>4.0.0</modelVersion>
-
     <artifactId>friends-bungee-client</artifactId>
+    <packaging>jar</packaging>
 
-  <properties>
-    <kotlin.version>1.2.30</kotlin.version>
-  </properties>
+    <properties>
+        <kotlin.version>1.2.30</kotlin.version>
+    </properties>
 
-  <repositories>
+    <repositories>
         <repository>
-            <id>tealcube-mvn-repo</id>
-            <url>http://tealcube.com/nexus/content/groups/public/</url>
+            <id>bungeecord-repo</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
     </repositories>
 
@@ -40,40 +41,49 @@
             <artifactId>atlantis-api-columbia</artifactId>
             <version>0.1.0</version>
         </dependency>
-      <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-stdlib-jre8</artifactId>
-        <version>${kotlin.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.jetbrains.kotlin</groupId>
-        <artifactId>kotlin-test</artifactId>
-        <version>${kotlin.version}</version>
-        <scope>test</scope>
-      </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib-jdk8</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-test</artifactId>
+            <version>${kotlin.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.md-5</groupId>
+            <artifactId>bungeecord-chat</artifactId>
+            <version>1.12-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
         <sourceDirectory>src/main/kotlin</sourceDirectory>
-      <plugins>
+        <plugins>
             <plugin>
                 <artifactId>kotlin-maven-plugin</artifactId>
-              <configuration>
-                <jvmTarget>1.8</jvmTarget>
-              </configuration>
-              <groupId>org.jetbrains.kotlin</groupId>
+                <configuration>
+                    <jvmTarget>1.8</jvmTarget>
+                </configuration>
+                <groupId>org.jetbrains.kotlin</groupId>
                 <version>${kotlin.version}</version>
                 <executions>
                     <execution>
                         <id>compile</id>
-                      <phase>compile</phase>
-                      <goals> <goal>compile</goal> </goals>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
                     </execution>
 
                     <execution>
                         <id>test-compile</id>
-                      <phase>test-compile</phase>
-                      <goals> <goal>test-compile</goal> </goals>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>test-compile</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -85,7 +95,9 @@
                     <execution>
                         <id>make-assembly</id>
                         <phase>package</phase>
-                        <goals> <goal>single</goal> </goals>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
                         <configuration>
                             <archive>
                                 <manifest>

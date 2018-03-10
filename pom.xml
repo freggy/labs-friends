@@ -8,9 +8,10 @@
     <artifactId>labs-friends</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
+
     <modules>
         <module>friends-api</module>
-        <module>friends-client</module>
+        <module>friends-bungee-client</module>
         <module>friends-server</module>
     </modules>
 

@@ -20,7 +20,7 @@ internal fun sendMessageToFriends(friendList: Set<FriendEntry>,
                                   proxy:      ProxyServer,
                                   player:     ProxiedPlayer,
                                   onLogin:    Boolean) {
-    
+    /*
     val message = if (onLogin) {
         getLoginMessage(player.name, friendsClient!!.zBridge.getRankColor(player.uniqueId))
     }
@@ -43,7 +43,7 @@ internal fun sendMessageToFriends(friendList: Set<FriendEntry>,
                 service.sendPackage(packet)
             }
         }
-    }
+    } */
 }
 
 /**
@@ -78,6 +78,7 @@ private fun displayInfo(player:          ProxiedPlayer,
     
     val message = if (isFriendList) friendListComps(friendName, friendRankColor) else pendingComps(friendName, friendRankColor)
     
+    /*
     if (onlineInfo.isPresent) {
         onlineInfo.get().currentServer?.let {
             message.append(it.service.toUpperCase()).color(ChatColor.GRAY)
@@ -86,7 +87,7 @@ private fun displayInfo(player:          ProxiedPlayer,
     }
     else message.append("OFFLINE")
             .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Im Limbus")))
-            .color(ChatColor.RED)
+            .color(ChatColor.RED) */
 
     player.sendMessage(ChatMessageType.CHAT, *message.create())
 }

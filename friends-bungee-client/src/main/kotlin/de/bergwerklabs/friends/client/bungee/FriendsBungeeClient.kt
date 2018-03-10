@@ -11,7 +11,6 @@ import de.bergwerklabs.framework.commons.bungee.command.help.CommandHelpDisplay
 import de.bergwerklabs.framework.commons.bungee.permissions.ZBridge
 import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.command.*
-import de.bergwerklabs.friends.client.bungee.common.PlayerSettingsWrapper
 import de.bergwerklabs.friends.client.bungee.common.getLoginMessage
 import de.bergwerklabs.friends.client.bungee.common.getLogoutMessage
 import de.bergwerklabs.friends.client.bungee.common.sendMessageToFriends
@@ -50,7 +49,7 @@ class FriendsBungeeClient : Plugin(), Listener {
                 "",
                 helpCommand,
                 FriendListCommand(),
-                InviteCommand(),
+                FriendInviteCommand(),
                 FriendDenyCommand(),
                 FriendAcceptCommand(),
                 FriendRemoveCommand(),

@@ -8,6 +8,7 @@ import de.bergwerklabs.friends.client.bungee.common.Entry
 import de.bergwerklabs.friends.client.bungee.common.compareFriends
 import de.bergwerklabs.friends.client.bungee.common.list
 import de.bergwerklabs.friends.client.bungee.friendsClient
+import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.chat.TextComponent
@@ -38,41 +39,34 @@ class FriendListCommand : BungeeCommand {
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
-            val friendList = FriendsApi.retrieveFriendInfo(sender.uniqueId).friendList
-            if (friendList.isNotEmpty()) {
-                var page = 1
-    
-                if (args!!.isNotEmpty()) {
-                    if (args!![0].isNullOrEmpty() || args[0].isBlank()) {
-                        friendsClient!!.messenger.message("§cEin Fehler ist aufgetreten.", sender)
-                        return
-                    }
-                    page = args[0].toInt()
+            FriendsApi.getFriendList(sender.uniqueId).thenAccept { friends ->
+                if (friends.isEmpty()) {
+                    friendsClient!!.messenger.message("§c${funnySentences[Random().nextInt(funnySentences.size)]}", sender)
+                    return@thenAccept
                 }
-                // PlayerResolver methods are blocking the main thread
-                friendsClient!!.runAsync {
-                    val sorted = friendList
-                            .map { friend -> Entry(
-                                    PlayerResolver.resolveUuidToName(friend.friend).orElse(":("),
-                                    friendsClient!!.zBridge.getRankColor(friend.friend))
-                            }
-                            .sortedWith(kotlin.Comparator { obj1, obj2 -> compareFriends(obj1, obj2)  })
-        
-                    val pages = Iterables.partition(sorted, pageSize).toList()
-                    
-                    if (page > pages.size || page <= 0) {
-                        friendsClient!!.messenger.message("§cSeitenzahl zu groß oder zu klein.", sender)
-                        return@runAsync
-                    }
-                    
-                        sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Freundesliste §6§m-------"))
-                        list(page, pages, sender, true)
-                        sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${(Math.ceil(friendList.size.toDouble() / pageSize)).toInt()}] §6§m-----------"))
-                    }
-            }
-            else {
-                friendsClient!!.messenger.message("§c${funnySentences[Random().nextInt(funnySentences.size)]}", sender)
-                return
+    
+                if (args!![0].isEmpty() || args[0].isBlank()) {
+                    friendsClient!!.messenger.message("§cEin Fehler ist aufgetreten.", sender)
+                    return@thenAccept
+                }
+    
+                val page = args[0].toInt()
+                
+                val sorted = friends
+                    .map { friend -> Entry(friend.mapping.name, ChatColor.WHITE) }
+                    .sortedWith(kotlin.Comparator { obj1, obj2 -> compareFriends(obj1, obj2)  })
+    
+                val pages = Iterables.partition(sorted, pageSize).toList()
+    
+                if (page > pages.size || page <= 0) {
+                    friendsClient!!.messenger.message("§cSeitenzahl zu groß oder zu klein.", sender)
+                    return@thenAccept
+                }
+    
+                sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Freundesliste §6§m-------"))
+                list(page, pages, sender, true)
+                sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${(Math.ceil(friends.size.toDouble() / pageSize)).toInt()}] §6§m-----------"))
+                
             }
         }
     }

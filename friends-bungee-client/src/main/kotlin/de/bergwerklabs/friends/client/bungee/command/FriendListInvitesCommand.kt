@@ -29,7 +29,8 @@ class FriendListInvitesCommand : BungeeCommand {
     override fun getDescription() = "Listet alle Freundschaftsanfragen auf."
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
-    
+        
+        /*
         if (sender is ProxiedPlayer) {
             val pending = FriendsApi.getPendingRequests(sender.uniqueId)
         
@@ -75,6 +76,6 @@ class FriendListInvitesCommand : BungeeCommand {
                 friendsClient!!.messenger.message("§cDu hast keine ausstehenden Anfragen.", sender)
                 return
             }
-        }
+        } */
     }
 }

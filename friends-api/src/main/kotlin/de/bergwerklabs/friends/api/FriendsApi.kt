@@ -1,13 +1,14 @@
 package de.bergwerklabs.friends.api
 
+import de.bergwerklabs.api.cache.pojo.PlayerNameToUuidMapping
 import de.bergwerklabs.api.cache.pojo.friends.FriendEntry
 import de.bergwerklabs.api.cache.pojo.friends.RequestEntry
 import de.bergwerklabs.atlantis.api.corepackages.cache.CachePacket
 import de.bergwerklabs.atlantis.api.friends.*
-import de.bergwerklabs.atlantis.api.friends.server.FriendlistRequestPacket
-import de.bergwerklabs.atlantis.api.friends.server.FriendlistResponsePacket
-import de.bergwerklabs.atlantis.api.friends.server.PendingInvitesRequestPacket
-import de.bergwerklabs.atlantis.api.friends.server.PendingInvitesResponsePacket
+import de.bergwerklabs.atlantis.api.friends.invite.FriendInviteClientRequestPacket
+import de.bergwerklabs.atlantis.api.friends.invite.FriendInviteClientResponsePacket
+import de.bergwerklabs.atlantis.api.friends.invite.FriendInviteServerResponse
+import de.bergwerklabs.atlantis.api.friends.server.*
 import de.bergwerklabs.atlantis.client.base.util.AtlantisPackageService
 import java.sql.Timestamp
 import java.util.*
@@ -52,10 +53,10 @@ class FriendsApi {
         }
 
         @JvmStatic
-        fun getFriendList(player: UUID): CompletableFuture<MutableSet<FriendEntry>> {
-            val future = CompletableFuture<MutableSet<FriendEntry>>()
+        fun getFriendList(player: UUID): CompletableFuture<MutableSet<Friend>> {
+            val future = CompletableFuture<MutableSet<Friend>>()
             service.sendPackage(FriendlistRequestPacket(player), FriendlistResponsePacket::class.java, AtlantisPackageService.Callback {
-                future.complete(it.friendEntries)
+                future.complete(it.friends)
             })
             return future
         }
@@ -68,9 +69,23 @@ class FriendsApi {
             })
             return future
         }
-
-        fun sendInvite(sender: UUID, receiver: UUID) {
-
+        
+        
+        fun respondToInvite(sender: PlayerNameToUuidMapping, receiver: PlayerNameToUuidMapping, response: FriendRequestResponse): CompletableFuture<InviteResponseData> {
+            val future = CompletableFuture<InviteResponseData>()
+            service.sendPackage(FriendInviteClientResponsePacket(receiver, sender, response), FriendInviteServerResponse::class.java, AtlantisPackageService.Callback {
+                future.complete(InviteResponseData(it.sender, it.receiver, it.response))
+            })
+            return future
+        }
+        
+        @JvmStatic
+        fun sendInvite(sender: PlayerNameToUuidMapping, receiver: PlayerNameToUuidMapping): CompletableFuture<InviteResponseData> {
+            val future = CompletableFuture<InviteResponseData>()
+            service.sendPackage(FriendInviteClientRequestPacket(sender, receiver), FriendInviteServerResponse::class.java, AtlantisPackageService.Callback {
+                future.complete(InviteResponseData(it.sender, it.receiver, it.response))
+            })
+            return future
         }
 
 

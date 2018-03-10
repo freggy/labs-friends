@@ -1,11 +1,7 @@
 package de.bergwerklabs.friends.client.bungee.command
 
-import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
-import de.bergwerklabs.friends.api.FriendsApi
-import de.bergwerklabs.friends.client.bungee.friendsClient
 import net.md_5.bungee.api.CommandSender
-import net.md_5.bungee.api.connection.ProxiedPlayer
 
 /**
  * Created by Yannic Rieger on 04.11.2017.
@@ -21,6 +17,8 @@ class FriendRemoveCommand : BungeeCommand {
     override fun getUsage() = "/friend remove <name>"
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
+        
+        /*
         val name = args!![0]
         if (sender is ProxiedPlayer) {
             // PlayerResolver#resolveNameToUuid blocks
@@ -33,7 +31,6 @@ class FriendRemoveCommand : BungeeCommand {
                     }
                     else friendsClient!!.messenger.message("§cDieser Spieler ist nicht mit dir befreundet.", sender)
                 }
-            }
-        }
+            } */
     }
 }

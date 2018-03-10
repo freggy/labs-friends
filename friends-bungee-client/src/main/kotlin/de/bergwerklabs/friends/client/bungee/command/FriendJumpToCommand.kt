@@ -21,6 +21,7 @@ class FriendJumpToCommand : BungeeCommand {
     override fun getName() = "tp"
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
+        /*
         if (sender is ProxiedPlayer) {
             if (args!!.isEmpty()) {
                 friendsClient!!.messenger.message("§cDu musst einen Namen angeben.", sender)
@@ -48,6 +49,6 @@ class FriendJumpToCommand : BungeeCommand {
                 }
                 else friendsClient!!.messenger.message("§cDieser Spieler ist zur Zeit nicht online.", sender)
             }
-        }
+        } */
     }
 }
