@@ -1,19 +1,13 @@
 package de.bergwerklabs.friends.client.bungee.common
 
 import de.bergwerklabs.api.cache.pojo.PlayerNameToUuidMapping
-import de.bergwerklabs.api.cache.pojo.friends.FriendEntry
-import de.bergwerklabs.api.cache.pojo.players.online.OnlinePlayerCacheEntry
-import de.bergwerklabs.atlantis.api.friends.Friend
 import de.bergwerklabs.atlantis.api.friends.FriendLoginPacket
 import de.bergwerklabs.atlantis.api.friends.FriendLogoutPacket
-import de.bergwerklabs.atlantis.client.base.util.AtlantisPackageService
 import de.bergwerklabs.framework.commons.misc.FancyNameGenerator
 import de.bergwerklabs.friends.api.FriendsApi
-import de.bergwerklabs.friends.client.bungee.friendsClient
 import me.lucko.luckperms.LuckPerms
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.ChatMessageType
-import net.md_5.bungee.api.ProxyServer
 import net.md_5.bungee.api.chat.*
 import net.md_5.bungee.api.connection.ProxiedPlayer
 import java.util.*
@@ -46,7 +40,12 @@ internal fun list(page: Int, pages: List<List<Entry>>, player: ProxiedPlayer, is
 }
 
 
-internal fun compareFriends(entry1: Entry, entry2: Entry) = Integer.compare(entry1.rankColor.ordinal, entry2.rankColor.ordinal)
+internal fun compareFriends(entry1: Entry, entry2: Entry): Int {
+    val result = Integer.compare(entry1.rankColor.ordinal, entry2.rankColor.ordinal)
+    // compare UUIDs since we always get a different order each time we request the list
+    if (result == 0) return entry1.uuid.compareTo(entry2.uuid)
+    return result
+}
 
 
 private fun displayInfo(player: ProxiedPlayer, friendName: String, friendRankColor: ChatColor, isFriendList: Boolean) {

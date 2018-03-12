@@ -10,4 +10,4 @@ import java.util.*
  * <p>
  * @author Yannic Rieger
  */
-data class Entry(val name: String, val rankColor: ChatColor)
+data class Entry(val name: String, val rankColor: ChatColor, val uuid: UUID)

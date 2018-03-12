@@ -34,6 +34,8 @@ class Main {
             )
             
             service.addListener(PlayerLoginPacket::class.java, { packet ->
+                
+                // TODO: store futures to remove the waiting in client
                 val uuid = packet.uuid
                 println("Loading information for $uuid")
                 

@@ -1,7 +1,6 @@
 package de.bergwerklabs.friends.client.bungee.command
 
 import com.google.common.collect.Iterables
-import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.common.Entry
@@ -9,9 +8,6 @@ import de.bergwerklabs.friends.client.bungee.common.compareFriends
 import de.bergwerklabs.friends.client.bungee.common.getColorBlocking
 import de.bergwerklabs.friends.client.bungee.common.list
 import de.bergwerklabs.friends.client.bungee.friendsClient
-import me.lucko.luckperms.LuckPerms
-import me.lucko.luckperms.api.Group
-import me.lucko.luckperms.api.User
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.ChatMessageType
 import net.md_5.bungee.api.CommandSender
@@ -35,10 +31,10 @@ class FriendListCommand : BungeeCommand {
     override fun getUsage() = "/friend list"
     
     private val funnySentences = arrayOf(
-            "Keine Freunde. Schade.",
-            "Du hast leider keine Freunde. Wenn du dich danach besser fühlst: Ist nur ein Datenbank-Problem",
-            "Wir konnten leider keine Freunde finden :(",
-            "Du hast noch keine Freunde."
+        "Keine Freunde. Schade.",
+        "Du hast leider keine Freunde. Wenn du dich danach besser fühlst: Ist nur ein Datenbank-Problem",
+        "Wir konnten leider keine Freunde finden :(",
+        "Du hast noch keine Freunde."
     )
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
@@ -46,22 +42,24 @@ class FriendListCommand : BungeeCommand {
             FriendsApi.getFriendList(sender.uniqueId)
                 .thenApplyAsync({ friends ->
                     friends.map { friend ->
-                        Entry(friend.mapping.name, ChatColor.getByChar(getColorBlocking(friend.mapping.uuid)[1]))
+                        Entry(
+                            friend.mapping.name,
+                            ChatColor.getByChar(getColorBlocking(friend.mapping.uuid)[1]),
+                            friend.mapping.uuid
+                        )
                     }
                 })
                 .thenAccept { friends ->
                     if (friends.isEmpty()) {
-                        friendsClient!!.messenger.message("§c${funnySentences[Random().nextInt(funnySentences.size)]}", sender)
+                        friendsClient!!.messenger.message(
+                            "§c${funnySentences[Random().nextInt(funnySentences.size)]}", sender
+                        )
                         return@thenAccept
                     }
                     
-                    if (args!![0].isEmpty() || args[0].isBlank()) {
-                        friendsClient!!.messenger.message("§cEin Fehler ist aufgetreten.", sender)
-                        return@thenAccept
-                    }
-                    
-                    val page = if (args[0].isEmpty()) 1 else args[0].toInt()
-                    val sorted = friends.sortedWith(kotlin.Comparator { obj1, obj2 -> compareFriends(obj1, obj2)  }).toList()
+                    val page = if (args!!.isEmpty() || args[0].isEmpty()) 1 else args[0].toInt()
+                    val sorted = friends.sortedWith(
+                        kotlin.Comparator { obj1, obj2 -> compareFriends(obj1, obj2) }).toList()
                     
                     val pages = Iterables.partition(sorted, pageSize).toList()
                     
@@ -70,10 +68,18 @@ class FriendListCommand : BungeeCommand {
                         return@thenAccept
                     }
                     
-                    sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Freundesliste §6§m-------"))
+                    sender.sendMessage(
+                        ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Freundesliste §6§m-------")
+                    )
                     list(page, pages, sender, true)
-                    sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/${(Math.ceil(friends.size.toDouble() / pageSize)).toInt()}] §6§m-----------"))
-            }
+                    sender.sendMessage(
+                        ChatMessageType.CHAT, *TextComponent.fromLegacyText(
+                        "§6§m----------§b [$page/${(Math.ceil(
+                            friends.size.toDouble() / pageSize
+                        )).toInt()}] §6§m-----------"
+                    )
+                    )
+                }
         }
     }
 }
