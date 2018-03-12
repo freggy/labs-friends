@@ -10,7 +10,4 @@ import java.util.*
  * <p>
  * @author Yannic Rieger
  */
-data class Entry(val name: String, val rankColor: ChatColor) {
-    
-    val onlineInfo: Optional<OnlinePlayerCacheEntry> = PlayerResolver.getOnlinePlayerCacheEntry(name)
-}
+data class Entry(val name: String, val rankColor: ChatColor)

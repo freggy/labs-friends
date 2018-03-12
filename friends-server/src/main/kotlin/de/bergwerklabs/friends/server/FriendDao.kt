@@ -19,15 +19,15 @@ class FriendDao(private val database: Database) {
 
     private val executor = Executors.newFixedThreadPool(10)
 
-    private val DELETE_FRIENDSHIP_QUERY = "DELETE FROM friendships WHERE uuid1 = ? OR uuid2 = ?"
+    private val DELETE_FRIENDSHIP_QUERY = "DELETE FROM friendships WHERE (uuid1 = ? AND uuid2 = ?) OR (uuid1 = ? AND uuid2 = ?)"
     private val GET_FRIENDSHIPS_QUERY = "SELECT * FROM friendships WHERE uuid2 = ? OR uuid1 = ?"
     private val CREATE_FRIENDSHIP_QUERY = "INSERT INTO friendships (uuid1, uuid2, created) VALUES (?, ?, ?)"
 
-    private val DELETE_PENDING_INVITES_QUERY = "DELETE FROM friend_requests WHERE acceptor = ? AND requester ?"
-    private val GET_PENDING_INVITES_QUERY = "SELECT requester FROM friend_requests WHERE acceptor = ?"
+    private val DELETE_PENDING_INVITES_QUERY = "DELETE FROM friend_requests WHERE acceptor = ? AND requester = ?"
+    private val GET_PENDING_INVITES_QUERY = "SELECT * FROM friend_requests WHERE acceptor = ?"
     private val CREATE_PENDING_INVITES_QUERY = "INSERT INTO friend_requests (requester, acceptor, created) VALUES (?, ?, ?)"
 
-    private val GET_SENT_INVITES_QUERY = "SELECT acceptor FROM friend_requests WHERE requester = ?"
+    private val GET_SENT_INVITES_QUERY = "SELECT * FROM friend_requests WHERE requester = ?"
 
     /**
      * Gets the friend list of asynchronously from the database.
@@ -62,7 +62,7 @@ class FriendDao(private val database: Database) {
     fun deleteFriendAsync(deleteFrom: UUID, toDelete: UUID) {
         this.executor.submit {
             val statement = this.database.prepareStatement(DELETE_FRIENDSHIP_QUERY)
-            statement.execute(deleteFrom.toString(), toDelete.toString())
+            statement.executeUpdate(deleteFrom.toString(), toDelete.toString(), toDelete.toString(), deleteFrom.toString())
             statement.close()
         }
     }
@@ -77,7 +77,7 @@ class FriendDao(private val database: Database) {
     fun createFriendshipAsync(responder: UUID, requester: UUID, created: Timestamp) {
         this.executor.submit {
             val statement = this.database.prepareStatement(CREATE_FRIENDSHIP_QUERY)
-            statement.execute(responder.toString(), requester.toString(), created)
+            statement.executeUpdate(responder.toString(), requester.toString(), created)
             statement.close()
         }
     }
@@ -92,7 +92,7 @@ class FriendDao(private val database: Database) {
     fun savePendingRequestAsync(responder: UUID, requester: UUID, created: Timestamp) {
         this.executor.submit {
             val statement = this.database.prepareStatement(CREATE_PENDING_INVITES_QUERY)
-            statement.execute(responder.toString(), requester.toString(), created)
+            statement.executeUpdate(requester.toString(), responder.toString(), created)
             statement.close()
         }
     }
@@ -104,13 +104,11 @@ class FriendDao(private val database: Database) {
      * @param requester [UUID] of the player who requested.
      */
     fun deletePendingRequestAsync(responder: UUID, requester: UUID) {
-        // TODO: use execute update
-        /*
-        this.executeAsync({params ->
+        this.executor.submit {
             val statement = this.database.prepareStatement(DELETE_PENDING_INVITES_QUERY)
-            statement.execute(*params)
+            statement.executeUpdate(responder.toString(), requester.toString())
             statement.close()
-        }, responder.toString(), requester.toString()) */
+        }
     }
 
     /**
@@ -134,7 +132,6 @@ class FriendDao(private val database: Database) {
      */
     fun retrieveSentInvitesAsync(sender: UUID): CompletableFuture<MutableSet<RequestEntry>> {
         val future = CompletableFuture<MutableSet<RequestEntry>>()
-
         this.executor.submit {
             future.complete(this.retrievePending(GET_SENT_INVITES_QUERY, sender))
         }
@@ -149,20 +146,25 @@ class FriendDao(private val database: Database) {
      */
     private fun retrievePending(query: String, uuid: UUID): MutableSet<RequestEntry> {
         val set = hashSetOf<RequestEntry>()
-        val statement = this.database.prepareStatement(query)
-        val result = statement.execute(uuid)
-        statement.close()
-
-        result.rows.forEach { row ->
-            val requesterString = row.getString("requester")
-            val acceptorString = row.getString("acceptor")
-
-            if (acceptorString != null && requesterString != null) {
-                val requester = UUID.fromString(requesterString)
-                val acc = UUID.fromString(acceptorString)
-                val created = row.getTimestamp("created").toString()
-                set.add(RequestEntry(created, requester, acc))
+        try {
+            val statement = this.database.prepareStatement(query)
+            val result = statement.execute(uuid.toString())
+            statement.close()
+    
+            result.rows.forEach { row ->
+                val requesterString = row.getString("requester")
+                val acceptorString = row.getString("acceptor")
+        
+                if (acceptorString != null && requesterString != null) {
+                    val requester = UUID.fromString(requesterString)
+                    val acc = UUID.fromString(acceptorString)
+                    val created = row.getTimestamp("created").toString()
+                    set.add(RequestEntry(created, requester, acc))
+                }
             }
+        }
+        catch (ex: Exception) {
+            ex.printStackTrace()
         }
         return set
     }
@@ -175,10 +177,10 @@ class FriendDao(private val database: Database) {
             // Catch exceptions because they will not be propagated through
             // due to execution in a thread pool
             try {
-                this.database.prepareStatement(query).use { statement ->
-                    val result = statement.execute(*params)
-                    future.complete(func(result))
-                }
+                val statement = this.database.prepareStatement(query)
+                val result = statement.execute(*params)
+                statement.close()
+                future.complete(func(result))
             }
             catch (ex: Exception) {
                 ex.printStackTrace()

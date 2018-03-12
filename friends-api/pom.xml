@@ -49,11 +49,6 @@
                         <phase>package</phase>
                         <goals> <goal>single</goal> </goals>
                         <configuration>
-                            <archive>
-                                <manifest>
-                                    <mainClass>de.bergwerklabs.friends.api.FriendsApi</mainClass>
-                                </manifest>
-                            </archive>
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>

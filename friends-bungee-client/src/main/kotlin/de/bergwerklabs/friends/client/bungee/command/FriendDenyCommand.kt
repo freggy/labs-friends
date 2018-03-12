@@ -35,7 +35,7 @@ class FriendDenyCommand : BungeeCommand {
             FriendsApi.respondToInvite(
                 PlayerNameToUuidMapping(sender.name, sender.uniqueId),
                 PlayerNameToUuidMapping(args[0], null),
-                FriendRequestResponse.ACCEPTED
+                FriendRequestResponse.DENIED
             )
             
             sender.sendMessage(

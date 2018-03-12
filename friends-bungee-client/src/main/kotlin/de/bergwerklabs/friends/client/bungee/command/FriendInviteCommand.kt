@@ -4,6 +4,7 @@ import de.bergwerklabs.api.cache.pojo.PlayerNameToUuidMapping
 import de.bergwerklabs.atlantis.api.friends.FriendRequestResponse
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.friends.api.FriendsApi
+import de.bergwerklabs.friends.client.bungee.common.getRankColor
 import de.bergwerklabs.friends.client.bungee.common.prefix
 import de.bergwerklabs.friends.client.bungee.friendsClient
 import net.md_5.bungee.api.ChatMessageType
@@ -31,10 +32,6 @@ class FriendInviteCommand : BungeeCommand {
             
             future.thenAccept { data ->
                 when (data.response) {
-                    FriendRequestResponse.ACCEPTED -> {
-                        val rankColor = "" // TODO: get color
-                        this.sendMessage(sender, "$rankColor${data.sender.name} hat deine Freunschaftsanfrage angenommen")
-                    }
                     FriendRequestResponse.ALREADY_FRIENDS -> {
                         this.sendMessage(sender, "Du bist bereits mit diesem Spieler befreundet.")
                     }
@@ -44,15 +41,17 @@ class FriendInviteCommand : BungeeCommand {
                     FriendRequestResponse.ALREADY_REQUESTED -> {
                         this.sendMessage(sender, "Du hast diesen Spieler bereits eine Anfrage geschickt.")
                     }
+                    FriendRequestResponse.SUCCESS -> {
+                        this.sendMessage(sender, "${getRankColor(data.receiver.uuid)}${data.receiver.name} §7hat deine Anfrage §aangenommen§7.")
+                    }
                     else -> return@thenAccept
                 }
             }
-            
             friendsClient!!.messenger.message("§7Deine Anfrage wurde versendet.", sender)
         }
     }
     
     private fun sendMessage(sender: ProxiedPlayer, message: String) {
-        sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("$prefix $message"))
+        sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("$prefix$message"))
     }
 }

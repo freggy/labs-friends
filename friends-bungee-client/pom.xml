@@ -25,9 +25,30 @@
 
     <dependencies>
         <dependency>
+            <groupId>de.bergwerklabs.friends</groupId>
+            <artifactId>friends-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
             <groupId>net.md-5</groupId>
             <artifactId>bungeecord-api</artifactId>
             <version>1.12-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.bergwerklabs.permissionbridge</groupId>
+            <artifactId>luckperms-common</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>de.bergwerklabs.framework</groupId>
+            <artifactId>permission-bridge</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>me.lucko.luckperms</groupId>
+            <artifactId>luckperms-api</artifactId>
+            <version>4.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -37,25 +58,16 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>de.bergwerklabs.atlantis</groupId>
-            <artifactId>atlantis-api-columbia</artifactId>
-            <version>0.1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-test</artifactId>
-            <version>${kotlin.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>net.md-5</groupId>
             <artifactId>bungeecord-chat</artifactId>
             <version>1.12-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.md-5</groupId>
+            <artifactId>bungeecord-event</artifactId>
+            <version>1.12-SNAPSHOT</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
