@@ -5,14 +5,13 @@ import de.bergwerklabs.api.cache.pojo.friends.RequestEntry
 import de.bergwerklabs.atlantis.api.friends.FriendRemovePacket
 import de.bergwerklabs.atlantis.api.friends.invite.FriendInviteClientRequestPacket
 import de.bergwerklabs.atlantis.api.friends.invite.FriendInviteClientResponsePacket
-import de.bergwerklabs.atlantis.api.friends.invite.FriendInviteServerRequest
-import de.bergwerklabs.atlantis.api.friends.invite.FriendInviteServerResponse
 import de.bergwerklabs.atlantis.api.friends.server.FriendlistRequestPacket
 import de.bergwerklabs.atlantis.api.friends.server.PendingInvitesRequestPacket
 import de.bergwerklabs.atlantis.api.friends.server.PlayerLoginPacket
 import de.bergwerklabs.atlantis.api.friends.server.PlayerLogoutPacket
 import de.bergwerklabs.atlantis.client.base.util.AtlantisPackageService
 import java.util.*
+import java.util.concurrent.CompletableFuture
 
 // TODO: add pending
 
@@ -27,10 +26,10 @@ internal val service = AtlantisPackageService(
 )
 
 // Contains the friends of a specific player
-internal val uuidToFriends = HashMap<UUID, MutableSet<FriendEntry>>()
+internal val uuidToFriends = HashMap<UUID, CompletableFuture<MutableSet<FriendEntry>>>()
 
 // Contains the pending friend requests of a player.
-internal val uuidToPending = HashMap<UUID, MutableSet<RequestEntry>>()
+internal val uuidToPending = HashMap<UUID, CompletableFuture<MutableSet<RequestEntry>>>()
 
 // Contains the friend requests sent by that player
-internal val uuidToRequested = HashMap<UUID, MutableSet<RequestEntry>>()
+internal val uuidToRequested = HashMap<UUID, CompletableFuture<MutableSet<RequestEntry>>>()

@@ -43,6 +43,9 @@ class FriendAcceptCommand : BungeeCommand {
                     FriendRequestResponse.SUCCESS -> {
                         sendMessage(sender, "Du hast die Freundschaftsanfrage §aangenommen.")
                     }
+                    FriendRequestResponse.UNKNOWN_NAME -> {
+                        this.sendMessage(sender, "§cDieser Spieler ist uns nicht bekannt.")
+                    }
                     else -> return@thenAccept
                 }
             }

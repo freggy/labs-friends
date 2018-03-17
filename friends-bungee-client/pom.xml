@@ -21,6 +21,10 @@
             <id>bungeecord-repo</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
+        <repository>
+            <id>labs_nexus</id>
+            <url>http://devs.bergwerklabs.de:8081/repository/maven-snapshots/</url>
+        </repository>
     </repositories>
 
     <dependencies>

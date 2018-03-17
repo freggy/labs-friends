@@ -26,23 +26,32 @@ class FriendInviteCommand : BungeeCommand {
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
-            val label = args!![0]
+            
+            if (args!!.isEmpty()) {
+                friendsClient!!.messenger.message("§cDu musst einen Namen angeben.", sender)
+                return
+            }
+            
+            val label = args[0]
             if (label.equals(sender.name, true)) return
             val future = FriendsApi.sendInvite(PlayerNameToUuidMapping(sender.name, sender.uniqueId), PlayerNameToUuidMapping(label, null))
             
             future.thenAccept { data ->
                 when (data.response) {
                     FriendRequestResponse.ALREADY_FRIENDS -> {
-                        this.sendMessage(sender, "Du bist bereits mit diesem Spieler befreundet.")
+                        this.sendMessage(sender, "§cDu bist bereits mit diesem Spieler befreundet.")
                     }
                     FriendRequestResponse.FRIEND_LIST_FULL -> {
-                        this.sendMessage(sender, "Deine Freundesliste ist voll.")
+                        this.sendMessage(sender, "§cDeine Freundesliste ist voll.")
                     }
                     FriendRequestResponse.ALREADY_REQUESTED -> {
-                        this.sendMessage(sender, "Du hast diesen Spieler bereits eine Anfrage geschickt.")
+                        this.sendMessage(sender, "§cDu hast diesen Spieler bereits eine Anfrage geschickt.")
                     }
                     FriendRequestResponse.SUCCESS -> {
                         this.sendMessage(sender, "${getRankColor(data.receiver.uuid)}${data.receiver.name} §7hat deine Anfrage §aangenommen§7.")
+                    }
+                    FriendRequestResponse.UNKNOWN_NAME -> {
+                        this.sendMessage(sender, "§cDieser Spieler ist uns nicht bekannt.")
                     }
                     else -> return@thenAccept
                 }

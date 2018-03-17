@@ -19,7 +19,6 @@ import net.md_5.bungee.api.event.PostLoginEvent
 import net.md_5.bungee.api.plugin.Listener
 import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.event.EventHandler
-import java.util.concurrent.TimeUnit
 
 internal var friendsClient: FriendsBungeeClient? = null
 
@@ -60,21 +59,17 @@ class FriendsBungeeClient : Plugin(), Listener {
         })
         
         packageService.addListener(FriendLoginPacket::class.java, { packet ->
-    
-            println(this.proxy.getPlayer(packet.messageReceiver.uuid))
-            println(packet.messageReceiver.uuid)
-            
-            this.proxy.getPlayer(packet.messageReceiver.uuid)?.let {
-                println(it.name)
-                it.sendMessage(ChatMessageType.CHAT, *getLoginMessage(packet.onlinePlayer.name, getRankColor(packet.onlinePlayer.uuid)))
-            }
+            this.proxy.getPlayer(packet.messageReceiver.uuid)?.sendMessage(
+                ChatMessageType.CHAT,
+                *getLoginMessage(packet.onlinePlayer.name, getRankColor(packet.onlinePlayer.uuid))
+            )
         })
         
         packageService.addListener(FriendLogoutPacket::class.java, { packet ->
-            this.proxy.getPlayer(packet.messageReceiver.uuid)?.let {
-                println(it.name)
-                it.sendMessage(ChatMessageType.CHAT, *getLogoutMessage(packet.onlinePlayer.name, getRankColor(packet.onlinePlayer.uuid)))
-            }
+            this.proxy.getPlayer(packet.messageReceiver.uuid)?.sendMessage(
+                ChatMessageType.CHAT,
+                *getLogoutMessage(packet.onlinePlayer.name, getRankColor(packet.onlinePlayer.uuid))
+            )
         })
         
         val parent = FriendParentCommand(
@@ -101,23 +96,20 @@ class FriendsBungeeClient : Plugin(), Listener {
     fun onPlayerLogin(event: PostLoginEvent) {
         val player = event.player
         FriendsApi.sendPlayerLogin(player.uniqueId)
-        
-        this.proxy.scheduler.schedule(this, {
-            FriendsApi.getPendingInvites(player.uniqueId).thenAccept { requests ->
-                val size = requests.size
-                if (size == 1) {
-                    player.sendMessage(
-                        ChatMessageType.CHAT, *TextComponent.fromLegacyText("${prefix}Du hast §beine §7Anfrage.")
-                    )
-                }
-                else if (size >= 2) {
-                    player.sendMessage(
-                        ChatMessageType.CHAT, *TextComponent.fromLegacyText("${prefix}Du hast §b §7Anfragen.")
-                    )
-                }
+        FriendsApi.getPendingInvites(player.uniqueId).thenAccept { requests ->
+            val size = requests.size
+            if (size == 1) {
+                player.sendMessage(
+                    ChatMessageType.CHAT, *TextComponent.fromLegacyText("${prefix}Du hast §beine §7Anfrage.")
+                )
             }
-            sendMessageToFriends(player, true)
-        }, 5, TimeUnit.SECONDS)
+            else if (size >= 2) {
+                player.sendMessage(
+                    ChatMessageType.CHAT, *TextComponent.fromLegacyText("${prefix}Du hast §b$size §7Anfragen.")
+                )
+            }
+        }
+        sendMessageToFriends(player, true)
     }
     
     @EventHandler

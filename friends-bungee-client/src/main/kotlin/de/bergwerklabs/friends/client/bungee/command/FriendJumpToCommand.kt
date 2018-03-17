@@ -22,7 +22,7 @@ class FriendJumpToCommand : BungeeCommand {
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
-            friendsClient!!.messenger.message("§bDieses Feature ist zur Zeit noch nicht verfügbar.", sender)
+            friendsClient!!.messenger.message("§bDieses Feature wird zur Zeit überarbeitet.", sender)
         }
     }
 }

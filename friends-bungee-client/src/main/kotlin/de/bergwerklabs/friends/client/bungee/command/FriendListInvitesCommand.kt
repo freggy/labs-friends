@@ -60,7 +60,7 @@ class FriendListInvitesCommand : BungeeCommand {
                     }
                     
                     sender.sendMessage(
-                        ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Anfragen §6§m--------")
+                        ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Anfragen §6§m---------")
                     )
                     list(page, pages, sender, true)
                     sender.sendMessage(

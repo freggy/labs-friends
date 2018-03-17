@@ -1,7 +1,5 @@
 package de.bergwerklabs.friends.client.bungee.common
 
-import de.bergwerklabs.api.cache.pojo.players.online.OnlinePlayerCacheEntry
-import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
 import net.md_5.bungee.api.ChatColor
 import java.util.*
 
