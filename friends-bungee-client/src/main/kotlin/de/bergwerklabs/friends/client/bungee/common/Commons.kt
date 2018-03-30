@@ -1,9 +1,9 @@
 package de.bergwerklabs.friends.client.bungee.common
 
 import de.bergwerklabs.api.cache.pojo.PlayerNameToUuidMapping
+import de.bergwerklabs.api.cache.pojo.players.online.PlayerEntry
 import de.bergwerklabs.atlantis.api.friends.FriendLoginPacket
 import de.bergwerklabs.atlantis.api.friends.FriendLogoutPacket
-import de.bergwerklabs.framework.commons.misc.FancyNameGenerator
 import de.bergwerklabs.friends.api.FriendsApi
 import me.lucko.luckperms.LuckPerms
 import net.md_5.bungee.api.ChatColor
@@ -32,11 +32,12 @@ internal fun sendMessageToFriends(player: ProxiedPlayer, isLogin: Boolean) {
  * @param pages   contains all the players friends.
  * @param player  player that executed the command.
  */
-internal fun list(page: Int, pages: List<List<Entry>>, player: ProxiedPlayer, isFriendList: Boolean) {
-    pages[page - 1]
-            .stream()
-            .filter(Objects::nonNull)
-            .forEach { obj -> displayInfo(player, obj.name, obj.rankColor, isFriendList) }
+internal fun list(pages: List<Entry>, player: ProxiedPlayer, isFriendList: Boolean) {
+    
+    
+    pages.stream()
+        .filter(Objects::nonNull)
+        .forEach { obj -> displayInfo(player, obj, isFriendList) }
 }
 
 
@@ -48,34 +49,69 @@ internal fun compareFriends(entry1: Entry, entry2: Entry): Int {
 }
 
 
-private fun displayInfo(player: ProxiedPlayer, friendName: String, friendRankColor: ChatColor, isFriendList: Boolean) {
-    val message = if (isFriendList) friendListComps(friendName, friendRankColor) else pendingComps(friendName, friendRankColor)
+private fun displayInfo(player: ProxiedPlayer, entry: Entry, isFriendList: Boolean) {
+    val message = if (isFriendList) friendListComps(entry.name, entry.rankColor, entry.playerEntry)
+    else pendingComps(
+        entry.name, entry.rankColor
+    )
     player.sendMessage(ChatMessageType.CHAT, *message.create())
 }
 
-private fun friendListComps(friendName: String, friendRankColor: ChatColor): ComponentBuilder {
-    return ComponentBuilder("✖").color(ChatColor.RED).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend remove $friendName"))
-            .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Entferne $friendName aus der Freundesliste.")))
-            
-            .append("✸").color(ChatColor.GOLD).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/party invite $friendName"))
-            .event(HoverEvent(HoverEvent.Action.SHOW_TEXT,  TextComponent.fromLegacyText("Lade $friendName in eine Party ein")))
-            
-            .append("➥").color(ChatColor.AQUA).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend tp $friendName"))
-            .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Joine $friendName nach")))
-            
-            .append(" $friendName").color(friendRankColor)
-        //.append(" - ").color(ChatColor.DARK_GRAY)
+private fun friendListComps(friendName: String, friendRankColor: ChatColor, online: PlayerEntry?): ComponentBuilder {
+    val comps = ComponentBuilder("✖").color(ChatColor.RED).event(
+        ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend remove $friendName")
+    )
+        .event(
+            HoverEvent(
+                HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Entferne $friendName aus der Freundesliste.")
+            )
+        )
+        
+        .append("✸").color(ChatColor.GOLD).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/party invite $friendName"))
+        .event(
+            HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Lade $friendName in eine Party ein"))
+        )
+        
+        .append("➥").color(ChatColor.AQUA).event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend tp $friendName"))
+        .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Joine $friendName nach")))
+        
+        .append(" $friendName").color(friendRankColor)
+        .append(" - ").color(ChatColor.DARK_GRAY)
+    
+    
+    
+    if (online == null) {
+        comps.append("OFFLINE")
+            .color(ChatColor.RED)
+            .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("§7Im Limbus")))
+    }
+    else {
+        comps.append("ONLINE")
+            .color(ChatColor.GREEN)
+            .event(
+                HoverEvent(
+                    HoverEvent.Action.SHOW_TEXT,
+                    TextComponent.fromLegacyText(
+                        "§7${online.server.service}\n§7${generator.generate(online.server.id)}"
+                    )
+                )
+            )
+    }
+    return comps
 }
 
 private fun pendingComps(friendName: String, friendRankColor: ChatColor): ComponentBuilder {
     return ComponentBuilder("✖").color(ChatColor.RED)
-                .event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend deny $friendName"))
-                .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Lehne Anfrage von $friendName ab.")))
-            .append("✚").color(ChatColor.GREEN)
-                .event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend accept $friendName"))
-                .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Nehme Anfrage von $friendName an.")))
-            .append(" $friendName").color(friendRankColor)
-            .append(" - ").color(ChatColor.DARK_GRAY)
+        .event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend deny $friendName"))
+        .event(
+            HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Lehne Anfrage von $friendName ab."))
+        )
+        .append("✚").color(ChatColor.GREEN)
+        .event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend accept $friendName"))
+        .event(
+            HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("Nehme Anfrage von $friendName an."))
+        )
+        .append(" $friendName").color(friendRankColor)
 }
 
 internal fun getRankColor(uuid: UUID) = ChatColor.getByChar(bridge.getGroupPrefix(uuid)[1])
@@ -106,9 +142,14 @@ internal fun getColorBlocking(uuid: UUID): String {
     return group.permissions.find { node -> node.isPrefix }!!.prefix.value
 }
 
-private fun getLoginOrOutMessage(name: String, color: ChatColor, loginOrOut: String, logColor: ChatColor): ComponentBuilder {
+private fun getLoginOrOutMessage(
+    name: String,
+    color: ChatColor,
+    loginOrOut: String,
+    logColor: ChatColor
+): ComponentBuilder {
     return ComponentBuilder(name).color(color)
-            .append(" ist ").color(ChatColor.GRAY)
-            .append(loginOrOut).color(logColor)
+        .append(" ist ").color(ChatColor.GRAY)
+        .append(loginOrOut).color(logColor)
     
 }

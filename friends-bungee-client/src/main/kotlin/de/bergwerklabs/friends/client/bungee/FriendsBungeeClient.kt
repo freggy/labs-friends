@@ -19,6 +19,7 @@ import net.md_5.bungee.api.event.PostLoginEvent
 import net.md_5.bungee.api.plugin.Listener
 import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.event.EventHandler
+import java.util.concurrent.TimeUnit
 
 internal var friendsClient: FriendsBungeeClient? = null
 
@@ -96,20 +97,24 @@ class FriendsBungeeClient : Plugin(), Listener {
     fun onPlayerLogin(event: PostLoginEvent) {
         val player = event.player
         FriendsApi.sendPlayerLogin(player.uniqueId)
-        FriendsApi.getPendingInvites(player.uniqueId).thenAccept { requests ->
-            val size = requests.size
-            if (size == 1) {
-                player.sendMessage(
-                    ChatMessageType.CHAT, *TextComponent.fromLegacyText("${prefix}Du hast §beine §7Anfrage.")
-                )
+        
+        this.proxy.scheduler.schedule(this, {
+            FriendsApi.getPendingInvites(player.uniqueId).thenAccept { requests ->
+                val size = requests.size
+                if (size == 1) {
+                    player.sendMessage(
+                        ChatMessageType.CHAT, *TextComponent.fromLegacyText("${prefix}Du hast §beine §7Anfrage.")
+                    )
+                }
+                else if (size >= 2) {
+                    player.sendMessage(
+                        ChatMessageType.CHAT, *TextComponent.fromLegacyText("${prefix}Du hast §b$size §7Anfragen.")
+                    )
+                }
             }
-            else if (size >= 2) {
-                player.sendMessage(
-                    ChatMessageType.CHAT, *TextComponent.fromLegacyText("${prefix}Du hast §b$size §7Anfragen.")
-                )
-            }
-        }
-        sendMessageToFriends(player, true)
+            sendMessageToFriends(player, true)
+        }, 5, TimeUnit.SECONDS)
+        
     }
     
     @EventHandler

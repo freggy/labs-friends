@@ -32,45 +32,45 @@ class FriendListInvitesCommand : BungeeCommand {
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         
         if (sender is ProxiedPlayer) {
-            FriendsApi.getPendingInvites(sender.uniqueId)
-                .thenApplyAsync({ requests ->
-                    requests.map { request ->
+            
+            val page = if (args!!.isEmpty() || args[0].isEmpty()) 1 else args[0].toInt()
+            
+            
+            FriendsApi.getPendingInvites(sender.uniqueId).thenAcceptAsync { invites ->
+                if (invites.isEmpty()) {
+                    friendsClient!!.messenger.message("§cDu hast keine offenen Anfragen.", sender)
+                    return@thenAcceptAsync
+                }
+                
+                val pages = Iterables.partition(invites, pageSize).toList()
+                
+                if (page > pages.size || page <= 0) {
+                    friendsClient!!.messenger.message("§cSeitenzahl zu groß oder zu klein.", sender)
+                    return@thenAcceptAsync
+                }
+                
+                val entries = pages[page]
+                    .map { request ->
                         Entry(
                             request.mapping.name,
                             ChatColor.getByChar(getColorBlocking(request.mapping.uuid)[1]),
-                            request.mapping.uuid
+                            request.mapping.uuid,
+                            null
                         )
                     }
-                })
-                .thenAccept { friends ->
-                    if (friends.isEmpty()) {
-                        friendsClient!!.messenger.message("§cDu hast keine offenen Anfragen.", sender)
-                        return@thenAccept
-                    }
-                    
-                    val page = if (args!!.isEmpty() || args[0].isEmpty()) 1 else args[0].toInt()
-                    val sorted = friends.sortedWith(
-                        kotlin.Comparator { obj1, obj2 -> compareFriends(obj1, obj2) }).toList()
-                    
-                    val pages = Iterables.partition(sorted, pageSize).toList()
-                    
-                    if (page > pages.size || page <= 0) {
-                        friendsClient!!.messenger.message("§cSeitenzahl zu groß oder zu klein.", sender)
-                        return@thenAccept
-                    }
-                    
-                    sender.sendMessage(
-                        ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Anfragen §6§m---------")
-                    )
-                    list(page, pages, sender, true)
-                    sender.sendMessage(
-                        ChatMessageType.CHAT, *TextComponent.fromLegacyText(
-                        "§6§m----------§b [$page/${(Math.ceil(
-                            sorted.size.toDouble() / pageSize
-                        )).toInt()}] §6§m--------"
-                    )
-                    )
-                }
+                    .sortedWith(kotlin.Comparator { obj1, obj2 -> compareFriends(obj1, obj2) })
+                
+                sender.sendMessage(
+                    ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m-------§b Anfragen §6§m--------")
+                )
+                list(entries, sender, false)
+                val size = Math.ceil(entries.size.toDouble() / pageSize).toInt()
+                
+                sender.sendMessage(
+                    ChatMessageType.CHAT, *TextComponent.fromLegacyText("§6§m----------§b [$page/$size] §6§m--------")
+                )
+                
+            }
         }
     }
 }

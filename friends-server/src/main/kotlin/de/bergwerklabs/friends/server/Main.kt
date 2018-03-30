@@ -36,9 +36,18 @@ class Main {
             service.addListener(PlayerLoginPacket::class.java, { packet ->
                 val uuid = packet.uuid
                 println("Loading information for $uuid")
-                uuidToFriends[uuid] = dao.retrieveFriendsAsync(uuid)
-                uuidToPending[uuid] = dao.retrievePendingInvitesAsync(uuid)
-                uuidToRequested[uuid] = dao.retrieveSentInvitesAsync(uuid)
+                
+                dao.retrieveFriendsAsync(uuid).thenAccept { friends ->
+                    uuidToFriends[uuid] = friends
+                }
+    
+                dao.retrievePendingInvitesAsync(uuid).thenAccept { pending ->
+                    uuidToPending[uuid] = pending
+                }
+    
+                dao.retrieveSentInvitesAsync(uuid).thenAccept { sent ->
+                    uuidToRequested[uuid] = sent
+                }
             })
             
             service.addListener(PlayerLogoutPacket::class.java, { packet ->
@@ -50,7 +59,7 @@ class Main {
             
             service.addListener(PendingInvitesRequestPacket::class.java, { packet ->
                 // invoke join() and get() explicitly because I know that these values are present.
-                val set = uuidToPending[packet.uuid]?.join()?.map { pending ->
+                val set = uuidToPending[packet.uuid]?.map { pending ->
                     Request(PlayerResolver.resolveUuidToNameAsync(pending.requester).join().get(), pending.created)
                 }?.toHashSet()
                 service.sendResponse(PendingInvitesResponsePacket(set), packet)
@@ -61,8 +70,8 @@ class Main {
                 println("Deleting friendship of ${packet.removeFrom} and ${packet.toRemove}")
                 val toRemove = PlayerResolver.resolveNameToUuidAsync(packet.toRemove.name).join().get()
                 dao.deleteFriendAsync(packet.removeFrom.uuid, toRemove.uuid)
-                uuidToFriends[packet.removeFrom.uuid]?.join()?.removeIf { friend -> friend.friend == toRemove.uuid }
-                uuidToFriends[toRemove.uuid]?.join()?.removeIf { friend -> friend.friend == packet.removeFrom.uuid }
+                uuidToFriends[packet.removeFrom.uuid]?.removeIf { friend -> friend.friend == toRemove.uuid }
+                uuidToFriends[toRemove.uuid]?.removeIf { friend -> friend.friend == packet.removeFrom.uuid }
             })
             
             service.addListener(FriendInviteClientRequestPacket::class.java, { packet ->
@@ -82,7 +91,7 @@ class Main {
                     val senderUuid = packet.sender.uuid
     
                     uuidToFriends[senderUuid]?.let { friends ->
-                        if (friends.join().any { it.friend == receiverUuid }) {
+                        if (friends.any { it.friend == receiverUuid }) {
                             service.sendResponse(
                                 FriendInviteServerResponse(
                                     packet.sender, packet.receiver, FriendRequestResponse.ALREADY_FRIENDS
@@ -93,7 +102,7 @@ class Main {
                     }
     
                     uuidToRequested[senderUuid]?.let { requested ->
-                        if (requested.join().any { it.acceptor == receiverUuid }) {
+                        if (requested.any { it.acceptor == receiverUuid }) {
                             service.sendResponse(
                                 FriendInviteServerResponse(
                                     packet.sender, packet.receiver, FriendRequestResponse.ALREADY_REQUESTED
@@ -105,7 +114,7 @@ class Main {
     
                     // Since both have invited each other, this implies that they want to be friends.
                     uuidToPending[senderUuid]?.let { requested ->
-                        if (requested.join().any { it.requester == receiverUuid }) {
+                        if (requested.any { it.requester == receiverUuid }) {
                             service.sendPackage(
                                 FriendInviteServerResponse(
                                     receiver, packet.sender, FriendRequestResponse.ACCEPTED
@@ -121,8 +130,8 @@ class Main {
                             this.removePending(dao, senderUuid, receiverUuid)
                             this.removePending(dao, receiverUuid, senderUuid)
             
-                            uuidToFriends[senderUuid]?.join()?.add(FriendEntry(timestamp.toString(), receiverUuid, senderUuid))
-                            uuidToFriends[receiverUuid]?.join()?.add(FriendEntry(timestamp.toString(), senderUuid, receiverUuid))
+                            uuidToFriends[senderUuid]?.add(FriendEntry(timestamp.toString(), receiverUuid, senderUuid))
+                            uuidToFriends[receiverUuid]?.add(FriendEntry(timestamp.toString(), senderUuid, receiverUuid))
                             return@thenAccept
                         }
                     }
@@ -131,8 +140,8 @@ class Main {
     
                     val timestamp = Timestamp(System.currentTimeMillis())
     
-                    uuidToRequested[senderUuid]?.join()?.add(RequestEntry(timestamp.toString(), senderUuid, receiver.uuid))
-                    uuidToPending[receiver.uuid]?.join()?.add(RequestEntry(timestamp.toString(), senderUuid, receiver.uuid))
+                    uuidToRequested[senderUuid]?.add(RequestEntry(timestamp.toString(), senderUuid, receiver.uuid))
+                    uuidToPending[receiver.uuid]?.add(RequestEntry(timestamp.toString(), senderUuid, receiver.uuid))
     
                     dao.savePendingRequestAsync(receiver.uuid, senderUuid, timestamp)
                     service.sendPackage(FriendServerInviteRequestPacket(receiver, packet.sender))
@@ -161,8 +170,8 @@ class Main {
         
                         dao.createFriendshipAsync(senderUuid, receiverUuid, timestamp)
         
-                        uuidToFriends[senderUuid]?.join()?.add(FriendEntry(timestamp.toString(), receiverUuid, senderUuid))
-                        uuidToFriends[receiverUuid]?.join()?.add(FriendEntry(timestamp.toString(), senderUuid, receiverUuid))
+                        uuidToFriends[senderUuid]?.add(FriendEntry(timestamp.toString(), receiverUuid, senderUuid))
+                        uuidToFriends[receiverUuid]?.add(FriendEntry(timestamp.toString(), senderUuid, receiverUuid))
         
                         // Send SUCCESS back so the client knows the request has been successfully processed.
                         service.sendResponse(
@@ -174,7 +183,7 @@ class Main {
             })
             
             service.addListener(FriendlistRequestPacket::class.java, { packet ->
-                val set = uuidToFriends[packet.uuid]?.join()?.map { friendEntry ->
+                val set = uuidToFriends[packet.uuid]?.map { friendEntry ->
                     Friend(PlayerResolver.resolveUuidToNameAsync(friendEntry.friend).join().get(), friendEntry.created)
                 }?.toHashSet()
                 service.sendResponse(FriendlistResponsePacket(packet.uuid, set), packet)
@@ -183,11 +192,11 @@ class Main {
     
         private fun removePending(dao: FriendDao, acceptor: UUID, requester: UUID) {
             dao.deletePendingRequestAsync(acceptor, requester)
-            uuidToPending[acceptor]?.join()?.removeIf { entry ->
+            uuidToPending[acceptor]?.removeIf { entry ->
                 entry.requester == requester && entry.acceptor == acceptor
             }
         
-            uuidToRequested[requester]?.join()?.removeIf { entry ->
+            uuidToRequested[requester]?.removeIf { entry ->
                 entry.requester == requester && entry.acceptor == acceptor
             }
         }
