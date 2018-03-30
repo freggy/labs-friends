@@ -21,8 +21,29 @@ class FriendJumpToCommand : BungeeCommand {
     override fun getName() = "tp"
     
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
-        if (sender is ProxiedPlayer) {
-            friendsClient!!.messenger.message("§bDieses Feature wird zur Zeit überarbeitet.", sender)
+        if (sender !is ProxiedPlayer) return
+        
+        val jumpTo = args!![0]
+        
+        if (jumpTo.isEmpty()) {
+            friendsClient!!.messenger.message("§cDu musst einen Namen angeben.", sender)
+            return
+        }
+        else if (jumpTo.equals(sender.name, true)) {
+            friendsClient!!.messenger.message("§4FATAL ERROR", sender)
+            return
+        }
+        
+        PlayerResolver.resolveNameToUuidAsync(jumpTo).thenAccept { optional ->
+            optional.ifPresent { mapping ->
+                PlayerResolver.getOnlinePlayerCacheEntry(mapping.uuid).thenAccept { optional ->
+                    if (optional.isPresent) {
+                        val current = optional.get()
+                        sender.connect(friendsClient!!.proxy.getServerInfo("${current.server.id}_${current.server.service}"))
+                    }
+                    else friendsClient!!.messenger.message("§cDieser Spieler ist nicht online.", sender)
+                }
+            }
         }
     }
 }

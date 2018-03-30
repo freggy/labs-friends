@@ -2,6 +2,7 @@ package de.bergwerklabs.friends.client.bungee.common
 
 import de.bergwerklabs.api.cache.pojo.PlayerNameToUuidMapping
 import de.bergwerklabs.api.cache.pojo.players.online.PlayerEntry
+import de.bergwerklabs.atlantis.api.friends.Friend
 import de.bergwerklabs.atlantis.api.friends.FriendLoginPacket
 import de.bergwerklabs.atlantis.api.friends.FriendLogoutPacket
 import de.bergwerklabs.friends.api.FriendsApi
@@ -33,18 +34,16 @@ internal fun sendMessageToFriends(player: ProxiedPlayer, isLogin: Boolean) {
  * @param player  player that executed the command.
  */
 internal fun list(pages: List<Entry>, player: ProxiedPlayer, isFriendList: Boolean) {
-    
-    
     pages.stream()
         .filter(Objects::nonNull)
         .forEach { obj -> displayInfo(player, obj, isFriendList) }
 }
 
 
-internal fun compareFriends(entry1: Entry, entry2: Entry): Int {
-    val result = Integer.compare(entry1.rankColor.ordinal, entry2.rankColor.ordinal)
+internal fun compareFriends(entry1: Pair<ChatColor, PlayerNameToUuidMapping>, entry2: Pair<ChatColor, PlayerNameToUuidMapping>): Int {
+    val result = Integer.compare(entry1.first.ordinal, entry2.first.ordinal)
     // compare UUIDs since we always get a different order each time we request the list
-    if (result == 0) return entry1.uuid.compareTo(entry2.uuid)
+    if (result == 0) return entry1.second.uuid.compareTo(entry2.second.uuid)
     return result
 }
 
@@ -57,7 +56,7 @@ private fun displayInfo(player: ProxiedPlayer, entry: Entry, isFriendList: Boole
     player.sendMessage(ChatMessageType.CHAT, *message.create())
 }
 
-private fun friendListComps(friendName: String, friendRankColor: ChatColor, online: PlayerEntry?): ComponentBuilder {
+private fun friendListComps(friendName: String, friendRankColor: ChatColor, online: Optional<PlayerEntry>): ComponentBuilder {
     val comps = ComponentBuilder("✖").color(ChatColor.RED).event(
         ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friend remove $friendName")
     )
@@ -80,19 +79,20 @@ private fun friendListComps(friendName: String, friendRankColor: ChatColor, onli
     
     
     
-    if (online == null) {
+    if (!online.isPresent) {
         comps.append("OFFLINE")
             .color(ChatColor.RED)
             .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("§7Im Limbus")))
     }
     else {
+        val current = online.get()
         comps.append("ONLINE")
             .color(ChatColor.GREEN)
             .event(
                 HoverEvent(
                     HoverEvent.Action.SHOW_TEXT,
                     TextComponent.fromLegacyText(
-                        "§7${online.server.service}\n§7${generator.generate(online.server.id)}"
+                        "§7${current.server.service}\n§7${generator.generate(current.server.id)}"
                     )
                 )
             )
