@@ -7,6 +7,7 @@ import de.bergwerklabs.atlantis.api.friends.FriendServerInviteRequestPacket
 import de.bergwerklabs.atlantis.api.friends.invite.FriendInviteServerResponse
 import de.bergwerklabs.framework.commons.bungee.chat.PluginMessenger
 import de.bergwerklabs.framework.commons.bungee.command.help.CommandHelpDisplay
+import de.bergwerklabs.framework.permissionbridge.PermissionBridge
 import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.command.*
 import de.bergwerklabs.friends.client.bungee.common.*
@@ -32,6 +33,7 @@ class FriendsBungeeClient : Plugin(), Listener {
     
     val messenger = PluginMessenger("Friends")
     lateinit var helpDisplay: CommandHelpDisplay
+    
     
     private val requestListener = FriendRequestListener()
     

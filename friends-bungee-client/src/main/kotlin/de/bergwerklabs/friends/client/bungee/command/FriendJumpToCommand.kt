@@ -1,8 +1,9 @@
 package de.bergwerklabs.friends.client.bungee.command
 
 import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
+import de.bergwerklabs.framework.commons.bungee.Lobbies
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
-import de.bergwerklabs.friends.api.FriendsApi
+import de.bergwerklabs.friends.client.bungee.common.bridge
 import de.bergwerklabs.friends.client.bungee.friendsClient
 import net.md_5.bungee.api.CommandSender
 import net.md_5.bungee.api.connection.ProxiedPlayer
@@ -39,7 +40,16 @@ class FriendJumpToCommand : BungeeCommand {
                 PlayerResolver.getOnlinePlayerCacheEntry(mapping.uuid).thenAccept { optional ->
                     if (optional.isPresent) {
                         val current = optional.get()
-                        sender.connect(friendsClient!!.proxy.getServerInfo("${current.server.id}_${current.server.service}"))
+                        val info = friendsClient!!.proxy.getServerInfo("${current.server.id}_${current.server.service}")
+                        val canJoin = Lobbies.isSuitableLobby(bridge.getGroupIdAsInt(mapping.uuid), info)
+                        if (!canJoin) {
+                            friendsClient!!.messenger.message("§cDu kannst diesem Server nicht joinen.", sender)
+                        }
+                        else {
+                            sender.connect(
+                                friendsClient!!.proxy.getServerInfo("${current.server.id}_${current.server.service}")
+                            )
+                        }
                     }
                     else friendsClient!!.messenger.message("§cDieser Spieler ist nicht online.", sender)
                 }
