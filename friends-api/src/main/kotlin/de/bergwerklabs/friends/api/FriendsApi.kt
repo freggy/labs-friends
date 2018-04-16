@@ -56,14 +56,6 @@ class FriendsApi {
             return future
         }
         
-        fun respondToInvite(sender: PlayerNameToUuidMapping, receiver: PlayerNameToUuidMapping, response: FriendRequestResponse): CompletableFuture<InviteResponseData> {
-            val future = CompletableFuture<InviteResponseData>()
-            service.sendPackage(FriendInviteClientResponsePacket(receiver, sender, response), FriendInviteServerResponse::class.java, AtlantisPackageService.Callback {
-                future.complete(InviteResponseData(it.sender, it.receiver, it.response))
-            })
-            return future
-        }
-        
         @JvmStatic
         fun sendInvite(sender: PlayerNameToUuidMapping, receiver: PlayerNameToUuidMapping): CompletableFuture<InviteResponseData> {
             val future = CompletableFuture<InviteResponseData>()
@@ -72,11 +64,19 @@ class FriendsApi {
             })
             return future
         }
-        
-        
+    
         @JvmStatic
         fun removeFriend(toRemove: PlayerNameToUuidMapping, removeFrom: PlayerNameToUuidMapping) {
             service.sendPackage(FriendRemovePacket(toRemove, removeFrom))
+        }
+    
+    
+        fun respondToInvite(sender: PlayerNameToUuidMapping, receiver: PlayerNameToUuidMapping, response: FriendRequestResponse): CompletableFuture<InviteResponseData> {
+            val future = CompletableFuture<InviteResponseData>()
+            service.sendPackage(FriendInviteClientResponsePacket(receiver, sender, response), FriendInviteServerResponse::class.java, AtlantisPackageService.Callback {
+                future.complete(InviteResponseData(it.sender, it.receiver, it.response))
+            })
+            return future
         }
     }
 }

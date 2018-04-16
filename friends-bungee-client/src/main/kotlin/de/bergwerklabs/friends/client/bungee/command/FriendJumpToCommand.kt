@@ -41,15 +41,17 @@ class FriendJumpToCommand : BungeeCommand {
                     if (optional.isPresent) {
                         val current = optional.get()
                         val info = friendsClient!!.proxy.getServerInfo("${current.server.id}_${current.server.service}")
-                        val canJoin = Lobbies.isSuitableLobby(bridge.getGroupIdAsInt(mapping.uuid), info)
-                        if (!canJoin) {
-                            friendsClient!!.messenger.message("§cDu kannst diesem Server nicht joinen.", sender)
+                        
+                        if (info.name.contains("lobby_")) {
+                            val canJoin = Lobbies.isSuitableLobby(bridge.getGroupIdAsInt(sender.uniqueId), info)
+                            if (!canJoin) {
+                                friendsClient!!.messenger.message("§cDu kannst diesem Server nicht joinen.", sender)
+                                return@thenAccept
+                            }
                         }
-                        else {
-                            sender.connect(
-                                friendsClient!!.proxy.getServerInfo("${current.server.id}_${current.server.service}")
-                            )
-                        }
+                        else sender.connect(
+                            friendsClient!!.proxy.getServerInfo("${current.server.id}_${current.server.service}")
+                        )
                     }
                     else friendsClient!!.messenger.message("§cDieser Spieler ist nicht online.", sender)
                 }

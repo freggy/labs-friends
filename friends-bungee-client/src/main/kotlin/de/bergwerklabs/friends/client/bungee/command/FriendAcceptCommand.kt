@@ -2,6 +2,7 @@ package de.bergwerklabs.friends.client.bungee.command
 
 import de.bergwerklabs.api.cache.pojo.PlayerNameToUuidMapping
 import de.bergwerklabs.atlantis.api.friends.FriendRequestResponse
+import de.bergwerklabs.atlantis.client.base.resolve.PlayerResolver
 import de.bergwerklabs.framework.commons.bungee.command.BungeeCommand
 import de.bergwerklabs.friends.api.FriendsApi
 import de.bergwerklabs.friends.client.bungee.common.prefix
@@ -31,22 +32,31 @@ class FriendAcceptCommand : BungeeCommand {
                 return
             }
             
-            FriendsApi.respondToInvite(
-                PlayerNameToUuidMapping(sender.name, sender.uniqueId),
-                PlayerNameToUuidMapping(args[0], null),
-                FriendRequestResponse.ACCEPTED
-            ).thenAccept { data ->
-                when (data.response) {
-                    FriendRequestResponse.FRIEND_LIST_FULL -> {
-                        this.sendMessage(sender, "Deine Freundesliste ist voll.")
+            val name = args[0]
+            
+            FriendsApi.getPendingInvites(sender.uniqueId).thenApply { invites ->
+                return@thenApply invites.any { request -> request.mapping.name.equals(name, true) }
+            }
+            .thenAccept { hasRequested ->
+                if (!hasRequested) return@thenAccept
+                
+                FriendsApi.respondToInvite(
+                    PlayerNameToUuidMapping(sender.name, sender.uniqueId),
+                    PlayerNameToUuidMapping(args[0], null),
+                    FriendRequestResponse.ACCEPTED
+                ).thenAccept { data ->
+                    when (data.response) {
+                        FriendRequestResponse.FRIEND_LIST_FULL -> {
+                            this.sendMessage(sender, "Deine Freundesliste ist voll.")
+                        }
+                        FriendRequestResponse.SUCCESS -> {
+                            sendMessage(sender, "Du hast die Freundschaftsanfrage §aangenommen.")
+                        }
+                        FriendRequestResponse.UNKNOWN_NAME -> {
+                            this.sendMessage(sender, "§cDieser Spieler ist uns nicht bekannt.")
+                        }
+                        else -> return@thenAccept
                     }
-                    FriendRequestResponse.SUCCESS -> {
-                        sendMessage(sender, "Du hast die Freundschaftsanfrage §aangenommen.")
-                    }
-                    FriendRequestResponse.UNKNOWN_NAME -> {
-                        this.sendMessage(sender, "§cDieser Spieler ist uns nicht bekannt.")
-                    }
-                    else -> return@thenAccept
                 }
             }
         }
