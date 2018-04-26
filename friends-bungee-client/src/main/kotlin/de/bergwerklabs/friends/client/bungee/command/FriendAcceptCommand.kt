@@ -18,28 +18,28 @@ import net.md_5.bungee.api.connection.ProxiedPlayer
  * @author Yannic Rieger
  */
 class FriendAcceptCommand : BungeeCommand {
-    
+
     override fun getUsage() = "/friend accept <name>"
-    
+
     override fun getName() = "accept"
-    
+
     override fun getDescription() = "Akzeptiert eine Freundschaftsanfrage."
-    
+
     override fun execute(sender: CommandSender?, args: Array<out String>?) {
         if (sender is ProxiedPlayer) {
             if (args!!.isEmpty()) {
                 friendsClient!!.messenger.message("§cEin Fehler ist aufgetreten.", sender)
                 return
             }
-            
+
             val name = args[0]
-            
+
             FriendsApi.getPendingInvites(sender.uniqueId).thenApply { invites ->
                 return@thenApply invites.any { request -> request.mapping.name.equals(name, true) }
             }
             .thenAccept { hasRequested ->
                 if (!hasRequested) return@thenAccept
-                
+
                 FriendsApi.respondToInvite(
                     PlayerNameToUuidMapping(sender.name, sender.uniqueId),
                     PlayerNameToUuidMapping(args[0], null),
@@ -61,7 +61,7 @@ class FriendAcceptCommand : BungeeCommand {
             }
         }
     }
-    
+
     private fun sendMessage(sender: ProxiedPlayer, message: String) {
         sender.sendMessage(ChatMessageType.CHAT, *TextComponent.fromLegacyText("${prefix} $message"))
     }
