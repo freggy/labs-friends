@@ -17,7 +17,8 @@ This project follows the standard Kotlin conventions. When working on this proje
 Usage and Documentation
 -----------------------
 
-API usage and documentation can be found in the [Wiki](https://github.com/Freggy/labs-framework/wiki) of this repository.
+API usage and documentation can be found in the [Wiki](https://github.com/Freggy/labs-friends/wiki) of this repository.
+**NOTE**: The documentation is not complete, new pages will be added over time.
 
 License
 -------
